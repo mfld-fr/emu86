@@ -16,9 +16,12 @@
 
 // Dummy INT3 as we already run under emulator
 
+byte_t _break_int_flag = 0;
+
 static int int_03h ()
 	{
-	puts ("warning: INT3");
+	//puts ("warning: INT3");
+	_break_int_flag = 1;
 	return 0;
 	}
 

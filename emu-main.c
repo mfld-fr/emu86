@@ -416,6 +416,16 @@ int main (int argc, char * argv [])
 				flag_trace = 1;
 				flag_prompt = 1;
 				}
+
+			// INT3 breakpoint test
+
+			if (_break_int_flag)
+				{
+				puts ("info: INT3 breakpoint hit");
+				_break_int_flag = 0;
+				flag_trace = 1;
+				flag_prompt = 1;
+				}
 			}
 
 		break;
