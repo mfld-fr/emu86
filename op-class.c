@@ -729,13 +729,15 @@ static int class_1_00h (byte_t code, op_desc_t * op_desc)
 		{
 		if (!(code & 0x04))
 			{
+			byte_t code_0 = code;
+
 			OP_ID = OP_CALC2 + ((code & 0x38) >> 3);
 			code = fetch_code_2 (op_desc);
 			err = class_w_mod_reg_rm (CF_D, op_desc);
 
 			// Suspicious null opcodes (ADD [BX+SI],AL)
 
-			op_code_null = (OP_ID == OP_ADD && !code) ? 1 : 0;
+			op_code_null = (!code_0 && !code) ? 1 : 0;
 			break;
 			}
 
