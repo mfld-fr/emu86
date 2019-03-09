@@ -247,13 +247,14 @@ word_t stack_pop ()
 	return w;
 	}
 
+// Dump the stack starting from current SP
+// Try to walk using the commonly used BP register
+// No more assumption can be made on stack frame
 
 void stack_print ()
 	{
-	word_t cs = seg_get (SEG_CS);
 	word_t ss = seg_get (SEG_SS);
 
-	word_t ip = reg16_get (REG_IP);
 	word_t sp = reg16_get (REG_SP);
 	word_t bp = reg16_get (REG_BP);
 
@@ -267,21 +268,17 @@ void stack_print ()
 		if (sp > bp) break;  // no frame
 
 		if (d > 0) putchar ('\n');
-		printf ("[%u] %.4X:%.4X\n", d, cs, ip);
+		printf ("[%u]\n", d);
 		mem_print (ss, sp, bp + 1);
 
 		// Next frame
-		// TODO: not only for NEAR call
 
-		sp = bp;
+		sp = bp + 2;
 
 		a = addr_seg_off (ss, bp);
 		bp = mem_read_word (a + 0);
-		ip = mem_read_word (a + 2);
 
 		if (sp > 0xFFFC) break;
-		sp = sp + 4;
-
 		d++;
 		}
 	}
