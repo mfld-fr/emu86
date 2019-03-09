@@ -24,6 +24,7 @@ static op_id_name_t id_name_tab [] = {
 	{ OP_CLC,   "CLC"   },
 	{ OP_CLD,   "CLD"   },
 	{ OP_CLI,   "CLI"   },
+	{ OP_CMC,   "CMC"   },
 	{ OP_CMP,   "CMP"   },
 	{ OP_CMPS,  "CMPS"  },  // TODO: how to display operation W flag ?
 	{ OP_DEC,   "DEC"   },
