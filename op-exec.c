@@ -1432,6 +1432,21 @@ static int op_loop (op_desc_t * op_desc)
 	return 0;
 	}
 
+// XLAT
+
+static int op_xlat (op_desc_t * op_desc)
+	{
+	assert (OP_ID == OP_XLAT);
+	assert (op_desc->var_count == 0);
+
+	word_t bx = reg16_get (REG_BX);
+	word_t ds = reg16_get (REG_BX);
+
+	addr_t a = addr_seg_off (ds, bx + (word_t) reg8_get (REG_AL));
+	reg8_set (REG_AL, mem_read_byte (a));
+
+	return 0;
+	}
 
 // Table of operation handlers
 
@@ -1574,7 +1589,7 @@ static op_id_hand_t _id_hand_tab [] = {
 	{ OP_LAHF,     op_flag_acc  },
 
 	{ OP_SALC,     NULL         },
-	{ OP_XLAT,     NULL         },
+	{ OP_XLAT,     op_xlat      },
 
 	{ OP_MOV,      op_move_load },
 	{ OP_LEA,      op_move_load },
