@@ -1,5 +1,5 @@
-#define _DEFAULT_SOURCE  // for cfmakeraw()
-#define _XOPEN_SOURCE 500  // for ptsname()
+#define _DEFAULT_SOURCE    // for cfmakeraw()
+#define _XOPEN_SOURCE 600  // for posix_openpt() & ptsname()
 
 #include <stdlib.h>
 #include <stdio.h>
