@@ -1,6 +1,5 @@
-
-#define _XOPEN_SOURCE  // for ptsname()
-#define _GNU_SOURCE  // for getpt()
+#define _DEFAULT_SOURCE  // for cfmakeraw()
+#define _XOPEN_SOURCE 500  // for ptsname()
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -9,6 +8,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <assert.h>
+#include <sys/select.h>
 
 #include "emu-serial.h"
 
@@ -65,7 +65,7 @@ void serial_init ()
 		{
 		// Create pseudo terminal for serial emulation
 
-		_ptm = getpt ();
+		_ptm = posix_openpt (O_RDWR);
 		if (_ptm < 0)
 			{
 			perror ("warning: cannot create PTM:");
