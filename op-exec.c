@@ -735,6 +735,12 @@ static int op_shift_rot (op_desc_t * op_desc)
 				flag_set (FLAG_OF, c ^ t);
 				}
 
+			if (id == OP_SHL)
+				{
+				flag_set (FLAG_ZF, a == 0);
+				flag_set (FLAG_SF, (a & 0x8000) != 0);
+				}
+
 			break;
 
 		case OP_RCR:
@@ -763,6 +769,12 @@ static int op_shift_rot (op_desc_t * op_desc)
 				q = q ? 1 : 0;
 
 				flag_set (FLAG_OF, t ^ q);
+				}
+
+			if (id == OP_SHR || id == OP_SAR)
+				{
+				flag_set (FLAG_ZF, a == 0);
+				flag_set (FLAG_SF, (a & 0x8000) != 0);
 				}
 
 			break;
@@ -1440,7 +1452,7 @@ static int op_xlat (op_desc_t * op_desc)
 	assert (op_desc->var_count == 0);
 
 	word_t bx = reg16_get (REG_BX);
-	word_t ds = reg16_get (REG_BX);
+	word_t ds = seg_get (SEG_DS);
 
 	addr_t a = addr_seg_off (ds, bx + (word_t) reg8_get (REG_AL));
 	reg8_set (REG_AL, mem_read_byte (a));

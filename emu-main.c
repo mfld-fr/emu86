@@ -77,6 +77,7 @@ static int file_load (addr_t start, char * path)
 
 
 // Program main
+int flag_prompt = 0;
 
 int main (int argc, char * argv [])
 	{
@@ -94,7 +95,6 @@ int main (int argc, char * argv [])
 		addr_t break_code_addr = -1;
 
 		int flag_trace = 0;
-		int flag_prompt = 0;
 
 		// Auto check
 
@@ -299,14 +299,10 @@ int main (int argc, char * argv [])
 				{
 				// Print processor status
 
-				putchar ('\n');
-				regs_print ();
-				putchar ('\n');
-
 				printf ("%.4hX:%.4hX  ", seg_get (SEG_CS), reg16_get (REG_IP));
 				print_column (op_code_str, 3 * OPCODE_MAX + 1);
 				print_op (&desc);
-				puts ("\n");
+				putchar ('\n');
 				}
 
 			// User prompt
@@ -316,18 +312,29 @@ int main (int argc, char * argv [])
 				// Get user command
 				// Ugly but temporary
 
+				serial_normal();
 				char com [8];
+				if (!flag_trace) putchar ('\n');
 				putchar ('>');
 				char * res = fgets (com, 8, stdin);
 				if (!res) break;
+				serial_raw();
 
 				switch (com [0])
 					{
 					// Dump stack
 
 					case 's':
-						putchar ('\n');
 						stack_print ();
+						flag_trace = 0;
+						flag_exec = 0;
+						break;
+
+					// Print registers
+
+					case 'r':
+						regs_print ();
+						flag_trace = 0;
 						flag_exec = 0;
 						break;
 
@@ -336,6 +343,21 @@ int main (int argc, char * argv [])
 					case 'p':
 						break_code_addr = addr_seg_off (op_code_seg, op_code_off);
 						flag_trace = 0;
+						flag_prompt = 0;
+						break;
+
+					// Trace one step
+
+					case 't':
+					case '\n':
+						flag_trace = 1;
+						flag_prompt = 1;
+						break;
+
+					// Continue tracing
+
+					case 'c':
+						flag_trace = 1;
 						flag_prompt = 0;
 						break;
 
