@@ -11,3 +11,7 @@ byte_t serial_poll ();
 
 void serial_init ();
 void serial_term ();
+
+// console only
+void serial_raw ();
+void serial_normal ();

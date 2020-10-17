@@ -9,7 +9,7 @@ EMU86_PROG = emu86
 
 EMU86_HDRS = op-common.h op-id-name.h op-class.h emu-mem-io.h emu-proc.h emu-serial.h emu-int.h op-exec.h
 EMU86_SRCS = op-common.c op-id-name.c op-class.c emu-mem-io.c emu-proc.c emu-serial.c emu-int.c op-exec.c emu-main.c
-EMU86_OBJS = op-common.o op-id-name.o op-class.o emu-mem-io.o emu-proc.o emu-serial.o emu-int.o op-exec.o emu-main.o
+EMU86_OBJS = op-common.o op-id-name.o op-class.o emu-mem-io.o emu-proc.o emu-console.o emu-int.o op-exec.o emu-main.o
 
 # PCAT utility for EMU86 serial stub
 
