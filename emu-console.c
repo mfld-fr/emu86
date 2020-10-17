@@ -1,6 +1,3 @@
-#define _DEFAULT_SOURCE    // for cfmakeraw()
-#define _XOPEN_SOURCE 600  // for posix_openpt() & ptsname()
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h>
@@ -10,7 +7,6 @@
 #include <assert.h>
 #include <sys/select.h>
 #include <termios.h>
-//#include <fcntl.h>
 #include <signal.h>
 #include <sys/ioctl.h>
 
@@ -37,7 +33,7 @@ byte_t serial_recv ()
 	if (n == 0) return 0;
 	if (n != 1)
 		{
-		perror ("warning: cannot read from PTM:");  // TODO: propagate error
+		perror ("warning: cannot read from console:");  // TODO: propagate error
 		}
 	if (c == 0x7f) c = '\b';	// convert DEL to BS
 
