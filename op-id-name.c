@@ -108,7 +108,7 @@ static op_id_name_t id_name_tab [] = {
 	};
 
 
-char *op_id_to_name (word_t op_id)
+char *op_id_to_name (word_t op_id, word_t lower)
 	{
 	char *name = NULL;
 	op_id_name_t *op = id_name_tab;
@@ -125,5 +125,17 @@ char *op_id_to_name (word_t op_id)
 		op++;
 		}
 
+	if (lower)
+		{
+		static char buf[10];
+		char *p = name;
+		char *q = buf;
+		while (*p)
+			{
+			*q++ = *p++ - 'A' + 'a';
+			}
+		*q = 0;
+		return buf;
+		}
 	return name;
 	}

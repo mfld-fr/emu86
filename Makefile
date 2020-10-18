@@ -11,6 +11,11 @@ EMU86_HDRS = op-common.h op-id-name.h op-class.h emu-mem-io.h emu-proc.h emu-ser
 EMU86_SRCS = op-common.c op-id-name.c op-class.c emu-mem-io.c emu-proc.c emu-serial.c emu-int.c op-exec.c emu-main.c
 EMU86_OBJS = op-common.o op-id-name.o op-class.o emu-mem-io.o emu-proc.o emu-console.o emu-int.o op-exec.o emu-main.o
 
+STYLE=att
+#STYLE=intel
+
+EMU86_OBJS += op-print-$(STYLE).o
+
 # PCAT utility for EMU86 serial stub
 
 PCAT_PROG = pcat
