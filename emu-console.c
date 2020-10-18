@@ -65,7 +65,7 @@ void serial_raw ()
 	{
 	struct termios termios;
 	tcgetattr(0, &termios);
-	termios.c_iflag &= ~(ICRNL|IGNCR|INLCR|IXON|IXOFF);
+	termios.c_iflag &= ~(ICRNL|IGNCR|INLCR);
 	//termios.c_oflag &= ~(OPOST);
 	termios.c_lflag &= ~(ECHO|ECHOE|ECHONL|ICANON);
 	tcsetattr(0, TCSANOW, &termios);
