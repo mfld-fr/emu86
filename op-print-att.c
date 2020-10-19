@@ -83,14 +83,14 @@ static void print_mem (byte_t flags, short rel)
 
 	if (flags & AF_SI)
 		{
-		if (reg) putchar ('+');
+		if (reg) putchar (',');
 		print_string ("%si");
 		reg = 1;
 		}
 
 	if (flags & AF_DI)
 		{
-		if (reg) putchar ('+');
+		if (reg) putchar (',');
 		print_string ("%di");
 		}
 
@@ -110,7 +110,7 @@ static void print_var (op_var_t * var)
 		case VT_IMM:
 			if (var->s)
 				{
-				printf ("$0x%.2x", var->val.s);
+				printf ("$0x%.2x", var->val.s & 0xFFFF);
 				break;
 				}
 
