@@ -173,16 +173,6 @@ void print_rel (byte_t prefix, short rel)
 
 void print_op (op_desc_t * op_desc)
 	{
-	byte_t count = op_desc->var_count;
-
-	// Special case for string operations
-	// TODO: use 'wb' operation flag
-
-	if (!count && (OP_ID >= OP_STRING0) && (OP_ID < OP_STRING0 + 8))
-		{
-		op_desc->var_wb = op_desc->w2 + 1;
-		}
-
 	char * name = op_id_to_name (OP_ID);
 
 	char name2 [OPNAME_MAX + 2];
@@ -211,6 +201,8 @@ void print_op (op_desc_t * op_desc)
 		}
 
 	print_column (name2, OPNAME_MAX + 2);  // 1 space + optional suffix
+
+	byte_t count = op_desc->var_count;
 
 	if (count >= 2)
 		{

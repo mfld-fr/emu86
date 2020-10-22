@@ -777,6 +777,7 @@ static int class_1_80h (byte_t code, op_desc_t * op_desc)
 				}
 
 			OP_ID = OP_STRING0 + ((code & 0x0E) >> 1);
+			op_desc->var_wb = 1 + op_desc->w2;
 			err = 0;
 			break;
 

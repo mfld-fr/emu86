@@ -177,17 +177,14 @@ void print_op (op_desc_t * op_desc)
 
 	byte_t count = op_desc->var_count;
 
-	// Special case for string operations
-	// TODO: use 'wb' operation flag
-
-	if (!count && (OP_ID >= OP_STRING0) && (OP_ID < OP_STRING0 + 8))
+	if (!count && op_desc->var_wb)
 		{
-		printf (op_desc->w2 ? "WORD" : "BYTE");
+		printf ((op_desc->var_wb == VP_WORD) ? "WORD": "BYTE");
 		}
 
 	if (count >= 1)
 		{
-		if (op_desc->var_wb) printf(op_desc->var_wb == VP_WORD? "WORD ": "BYTE ");
+		if (op_desc->var_wb) printf ((op_desc->var_wb == VP_WORD) ? "WORD ": "BYTE ");
 		print_var (&(op_desc->var_to));
 		}
 
