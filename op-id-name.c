@@ -4,6 +4,7 @@
 
 #include "op-id.h"
 #include "op-id-name.h"
+#include "op-class.h"
 
 
 struct op_id_name_s
@@ -108,7 +109,7 @@ static op_id_name_t id_name_tab [] = {
 	};
 
 
-char *op_id_to_name (word_t op_id, word_t lower)
+char *op_id_to_name (word_t op_id, word_t lower, byte_t wb)
 	{
 	char *name = NULL;
 	op_id_name_t *op = id_name_tab;
@@ -127,13 +128,17 @@ char *op_id_to_name (word_t op_id, word_t lower)
 
 	if (lower)
 		{
-		static char buf[10];
+		static char buf[OPNAME_MAX+2];
 		char *p = name;
 		char *q = buf;
 		while (*p)
 			{
 			*q++ = *p++ - 'A' + 'a';
 			}
+		if (wb == VP_WORD)
+			*q++ = 'w';
+		if (wb == VP_BYTE)
+			*q++ = 'b';
 		*q = 0;
 		return buf;
 		}

@@ -171,7 +171,7 @@ void print_rel (byte_t prefix, short rel)
 
 void print_op (op_desc_t * op_desc)
 	{
-	char *name = op_id_to_name (OP_ID, 0);
+	char *name = op_id_to_name (OP_ID, 0, 0);
 	if (!name) name = "???";
 	print_column (name, OPNAME_MAX + 2);
 
@@ -188,6 +188,7 @@ void print_op (op_desc_t * op_desc)
 
 	if (count >= 1)
 		{
+		if (op_desc->var_wb) printf(op_desc->var_wb == VP_WORD? "WORD ": "BYTE ");
 		print_var (&(op_desc->var_to));
 		}
 
