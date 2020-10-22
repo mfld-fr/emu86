@@ -357,7 +357,7 @@ static int class_mod_rm (byte_t flags, op_desc_t * op)
 	}
 
 
-static int class_w_mod_rm (byte_t flags, op_desc_t * op) //YYY
+static int class_w_mod_rm (byte_t flags, op_desc_t * op)
 	{
 	op->var_count = 1;
 
