@@ -343,7 +343,7 @@ static int int_D0h ()
 		// ADVTECH: program select (DIP SW) ?
 
 		case 0x01:
-			reg16_set (REG_AX, 3);  // program 01 -> MON86  11 -> TEST
+			reg16_set (REG_AX, 1);  // program 01 -> MON86  11 -> TEST
 			break;
 
 		// ADVTECH: RTC present ?

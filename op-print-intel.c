@@ -13,8 +13,6 @@
 
 // Opcode helpers
 
-extern byte_t * op_code_base;
-extern word_t op_code_seg;
 extern word_t op_code_off;
 
 char op_code_str [3 * OPCODE_MAX + 2];
@@ -182,15 +180,17 @@ void print_op (op_desc_t * op_desc)
 		printf ((op_desc->var_wb == VP_WORD) ? "WORD": "BYTE");
 		}
 
-	if (count >= 1)
+	if (count == 1)
 		{
 		if (op_desc->var_wb) printf ((op_desc->var_wb == VP_WORD) ? "WORD ": "BYTE ");
 		print_var (&(op_desc->var_to));
 		}
 
-	if (count >= 2)
+	if (count == 2)
 		{
+		print_var (&(op_desc->var_to));
 		putchar (',');
+		if (op_desc->var_wb) printf ((op_desc->var_wb == VP_WORD) ? "WORD ": "BYTE ");
 		print_var (&(op_desc->var_from));
 		}
 	}

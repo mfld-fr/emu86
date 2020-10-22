@@ -253,7 +253,7 @@ static int class_seg (byte_t flags, op_desc_t * op)
 	}
 
 
-static int class_w_imm (byte_t flags, op_desc_t * op)
+static int class_acc_w_imm (byte_t flags, op_desc_t * op)
 	{
 	op->var_count = 2;
 
@@ -281,7 +281,7 @@ static int class_w_imm (byte_t flags, op_desc_t * op)
 	}
 
 
-static int class_d_w_addr (byte_t flags, op_desc_t * op)
+static int class_acc_d_w_addr (byte_t flags, op_desc_t * op)
 	{
 	op->var_count = 2;
 
@@ -365,6 +365,10 @@ static int class_w_mod_rm (byte_t flags, op_desc_t * op)
 
 	scan_mod_rm (op->w2, op->mod, op->rm, var_rm);
 
+	// Explicit operation size on memory
+
+	if (var_rm->type == VT_MEM) op->var_wb = 1 + op->w2;
+
 	if (flags & CF_V)  // variable count
 		{
 		op->var_count = 2;
@@ -385,10 +389,6 @@ static int class_w_mod_rm (byte_t flags, op_desc_t * op)
 			var_num->val.b = 1;
 			}
 		}
-		else
-		{
-		op->var_wb = op->w2 + 1; // "inc 0x1234"
-		}
 
 	return 0;
 	}
@@ -402,6 +402,10 @@ static int class_w_mod_rm_imm (byte_t flags, op_desc_t * op)
 	op_var_t * var_imm = &(op->var_from);
 
 	scan_mod_rm (op->w2, op->mod, op->rm, var_rm);
+
+	// Explicit operation size on immediate to memory
+
+	if (var_rm->type == VT_MEM) op->var_wb = 1 + op->w2;
 
 	// Immediate value follows the MOD-RM displacement
 
@@ -587,7 +591,7 @@ static int class_1_00h (byte_t code, op_desc_t * op_desc)
 		if (!(code & 0x02))
 			{
 			OP_ID = OP_CALC2 + ((code & 0x38) >> 3);
-			err = class_w_imm (0, op_desc);
+			err = class_acc_w_imm (0, op_desc);
 			break;
 			}
 
@@ -605,6 +609,8 @@ static int class_1_00h (byte_t code, op_desc_t * op_desc)
 			break;
 			}
 
+		// AAA / AAS / DAA / DAS
+
 		OP_ID = OP_ADJUST1 + op_desc->seg1;
 		err = 0;
 		break;
@@ -620,10 +626,14 @@ static int class_1_40h (byte_t code, op_desc_t * op_desc)
 
 	switch (code & 0x30)
 		{
+		// INC / DEC
+
 		case 0x00:
 			OP_ID = OP_STEP1 + ((code & 0x08) >> 3);
 			err = class_reg (0, op_desc);
 			break;
+
+		// PUSH / POP
 
 		case 0x10:
 			OP_ID = OP_STACK1 + ((code & 0x08) >> 3);
@@ -638,6 +648,8 @@ static int class_1_40h (byte_t code, op_desc_t * op_desc)
 				err = -1;
 				break;
 				}
+
+			// PUSHA / POPA
 
 			OP_ID = OP_STACK2 + op_desc->w2;
 			err = 0;
@@ -670,8 +682,7 @@ static int class_1_80h (byte_t code, op_desc_t * op_desc)
 				if (!(code & 0x08))
 					{
 					OP_ID = OP_CALC2 + op_desc->reg2;
-					err = class_w_mod_rm_imm (CF_S, op_desc);  // TODO: S not compliant for all operations
-					op_desc->var_wb = op_desc->w2 + 1; // "cmp $0,0x1234"
+					err = class_w_mod_rm_imm (CF_S, op_desc);  // TODO: S not compliant for OR / AND / XOR operations
 					break;
 					}
 
@@ -729,6 +740,8 @@ static int class_1_80h (byte_t code, op_desc_t * op_desc)
 
 			switch (op_desc->reg1)
 				{
+				// CBW / CWD
+
 				case 0x00:
 				case 0x01:
 					OP_ID = OP_CONVERT1 + op_desc->w2;
@@ -745,11 +758,15 @@ static int class_1_80h (byte_t code, op_desc_t * op_desc)
 					err = 0;
 					break;
 
+				// PUSHF / POPF
+
 				case 0x04:
 				case 0x05:
 					OP_ID = OP_STACK3 + op_desc->w2;
 					err = 0;
 					break;
+
+				// SAHF / LAHF
 
 				case 0x06:
 				case 0x07:
@@ -765,14 +782,14 @@ static int class_1_80h (byte_t code, op_desc_t * op_desc)
 			if ((code & 0x0C) == 0x00)
 				{
 				OP_ID = OP_MOV;
-				err = class_d_w_addr (0, op_desc);
+				err = class_acc_d_w_addr (0, op_desc);
 				break;
 				}
 
 			if ((code & 0x0E) == 0x08)
 				{
 				OP_ID = OP_TEST;
-				err = class_w_imm (0, op_desc);
+				err = class_acc_w_imm (0, op_desc);
 				break;
 				}
 
@@ -828,6 +845,8 @@ static int class_1_C0h (byte_t code, op_desc_t * op_desc)
 
 				if (!(code & 0x02))
 					{
+					// LES / LDS
+
 					OP_ID = OP_LOAD1 + op_desc->w2;
 					err = class_mod_reg_rm (CF_F, op_desc);
 					break;
@@ -835,7 +854,6 @@ static int class_1_C0h (byte_t code, op_desc_t * op_desc)
 
 				OP_ID = OP_MOV;
 				err = class_w_mod_rm_imm (0, op_desc);
-				op_desc->var_wb = op_desc->w2 + 1; // "mov $0,0x1234"
 				break;
 				}
 
@@ -971,9 +989,11 @@ static int class_1_C0h (byte_t code, op_desc_t * op_desc)
 			code_2 = fetch_code_2 (op_desc);
 			switch (op_desc->reg2)
 				{
+				// INC / DEC
+
 				case 0x00:
 				case 0x01:
-					OP_ID = OP_INC + (op_desc->reg2 & 0x01);
+					OP_ID = OP_STEP1 + (op_desc->reg2 & 0x01);
 					err = class_w_mod_rm (0, op_desc);
 					break;
 
