@@ -1,4 +1,4 @@
-# EMU86 makefile
+# EMU86 main makefile
 
 CFLAGS = -g
 PREFIX = /usr/local
@@ -7,16 +7,47 @@ PREFIX = /usr/local
 
 EMU86_PROG = emu86
 
-EMU86_HDRS = op-common.h op-id-name.h op-class.h emu-mem-io.h emu-proc.h emu-serial.h emu-int.h op-exec.h
-EMU86_SRCS = op-common.c op-id-name.c op-class.c emu-mem-io.c emu-proc.c emu-serial.c emu-int.c op-exec.c emu-main.c
-EMU86_OBJS = op-common.o op-id-name.o op-class.o emu-mem-io.o emu-proc.o emu-console.o emu-int.o op-exec.o emu-main.o
+EMU86_HDRS = \
+	op-common.h \
+	op-id-name.h \
+	op-class.h \
+	emu-mem-io.h \
+	emu-proc.h \
+	emu-serial.h \
+	emu-int.h \
+	op-exec.h \
+	# end of list
+
+EMU86_OBJS = \
+	op-common.o \
+	op-id-name.o \
+	op-class.o \
+	emu-mem-io.o \
+	emu-proc.o \
+	emu-int.o \
+	op-exec.o \
+	emu-main.o \
+	#end of list
+
+# Disassembly style
+# AT&T syntax (GNU default)
+# Intel syntax
 
 STYLE=att
 #STYLE=intel
 
 EMU86_OBJS += op-print-$(STYLE).o
 
-# PCAT utility for EMU86 serial stub
+# Serial emulation
+# Connected to EMU86 stdin & stdout
+# Connected to PTY (created by EMU86)
+
+SERIAL=console
+#SERIAL=pty
+
+EMU86_OBJS += emu-$(SERIAL).o
+
+# PCAT utility for EMU86 serial port
 
 PCAT_PROG = pcat
 
@@ -33,7 +64,7 @@ install: $(EMU86_PROG) $(PCAT_PROG)
 	install -m 755 -s $(EMU86_PROG) $(PREFIX)/bin/$(EMU86_PROG)
 	install -m 755 -s $(PCAT_PROG) $(PREFIX)/bin/$(PCAT_PROG)
 
-clean:	
+clean:
 	rm -f $(EMU86_OBJS) $(EMU86_PROG) $(PCAT_OBJS) $(PCAT_PROG)
 
 $(EMU86_OBJS): $(EMU86_HDRS)

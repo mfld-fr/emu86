@@ -59,6 +59,15 @@ byte_t serial_poll ()
 	}
 
 
+void serial_raw ()
+	{
+	}
+
+void serial_normal ()
+	{
+	}
+
+
 void serial_init ()
 	{
 	while (1)

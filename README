@@ -1,26 +1,26 @@
-*** WORK IN PROGRESS ***
-
+WHAT IS THIS ?
 
 EMU86 is yet another 8086/8088/80186/80188 emulator.
 
 That old 16-bit processor architecture is still used today in some devices
-(micro-controllers, SBC, SoC, etc) that reuse the huge hardware and code
-base from the legacy PC/XT/AT platform.
+(SBC, MCU, SoC, FPGA, etc) that reuse the huge hardware & code base from the
+legacy PC/XT/AT platform.
 
 This emulator is intended to help the related embedded software development,
 at the stage of testing / debugging the code on the development system before
-burning it into EEPROM / Flash on the device.
+burning it into the EEPROM / Flash on the device.
 
 The goal is NOT to reinvent the wheel for PC / end-user emulation, as others
 projects like QEMU, DOSEMU, Bochs, etc., already do that job very well.
+
 Therefore some features like the 80286 protected mode and the 32/64 bits
 modes are out of this project scope.
 
 The emulator has a modular design with:
-- instruction decoder
-- instruction printer
+- instruction decoding
+- instruction printing
 - processor context
-- instruction executor
+- instruction execution
 - memory & I/O access handler for peripheral stubbing
 - interrupt handler for firmware (BIOS) stubbing
 - some debugger features
@@ -32,15 +32,22 @@ Debugger features:
 - unhandled INT3 breakpoint
 - step in / over
 
-Serial port is emulated through a pseudo-terminal (/dev/pts), with a
-bidirectional cat utility (pcat) to be able to redirect serial I/O from / to
-file and thus easing test automation (see test-mon86 script as an example).
+Emulated serial port is connected:
+
+* either to a pseudo-terminal (/dev/pts), with a bidirectional cat utility
+(pcat) to be able to redirect serial I/O from / to a file and thus easing
+test automation,
+
+* or directly to the emulator console (standard input / output).
+
+A good reference is the "8086tiny" project.
 
 
 CURRENT STATUS:
 
-The emulator is now able to execute MON86 code, targetting the Advantech
-SNMP-1000 SBC with its specific INT 10h / 16h minimally stubbed.
+The emulator is now able to execute MON86 and SYS86 code, targetting the
+Advantech SNMP-1000 SBC with its specific BIOS and devices (interrupt
+controller, timer and serial port).
 
 It also executes partially the original ROM code of the same SBC, enough to
 reach the user prompt and to run some basic commands of the embedded
@@ -50,21 +57,15 @@ It is also used to debug ELKS in a minimal ROM-loaded configuration,
 headless and diskless, but with a ROM-disk and a serial console.
 
 
-TODO:
+WHAT REMAINS TO DO ?
 
-* Core:
-- complete 8086 instruction set : WIP
+* General:
+  - Complete the 8086 instruction set
+  - Complete the 80186 instruction set
 
-* Embedded systems:
-- add 80186 instruction set : WIP
-- add 80186 integrated peripherals (timer, serial)
-- add EEPROM / Flash emulation
+* For the SBC:
+  - More HW emulation of the R8810 MCU
+  - Add EEPROM / Flash emulation
 
-The goal is to provide the minimum set of features needed to run a standalone
-version of MON86 targetting any 80186/80188 based system.
-
-* Legacy PC/XT/AT platform:
-- more support of BIOS interrupts
-
-
-A good reference is the "8086tiny" project.
+* For ELKS:
+  - More BIOS support
