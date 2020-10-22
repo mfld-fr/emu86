@@ -72,17 +72,21 @@ typedef struct op_var_s op_var_t;
 
 // Operation
 
+#define VP_BYTE   1     // byte instruction printing
+#define VP_WORD   2     // word instruction printing
+
 struct op_desc_s
 	{
 	word_t    op_id;    // operation identifier
 
 	byte_t   var_count; // operand count
+	byte_t   var_wb;    // operand is =1 byte, =2 word (for printing)
 	op_var_t var_to;    // optional single or 'to' operand
 	op_var_t var_from;  // optional 'from' operand
 
 	// opcode 1 byte fields
 
-	byte_t v1;;         // variable flag (for in and out)
+	byte_t v1;          // variable flag (for in and out)
 	byte_t w1;          // w flag 1
 	byte_t seg1;        // segment number
 	byte_t reg1;        // register number

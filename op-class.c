@@ -357,7 +357,7 @@ static int class_mod_rm (byte_t flags, op_desc_t * op)
 	}
 
 
-static int class_w_mod_rm (byte_t flags, op_desc_t * op)
+static int class_w_mod_rm (byte_t flags, op_desc_t * op) //YYY
 	{
 	op->var_count = 1;
 
@@ -384,6 +384,10 @@ static int class_w_mod_rm (byte_t flags, op_desc_t * op)
 			var_num->s = 0;
 			var_num->val.b = 1;
 			}
+		}
+		else
+		{
+		op->var_wb = op->w2 + 1; // "inc 0x1234"
 		}
 
 	return 0;
@@ -667,6 +671,7 @@ static int class_1_80h (byte_t code, op_desc_t * op_desc)
 					{
 					OP_ID = OP_CALC2 + op_desc->reg2;
 					err = class_w_mod_rm_imm (CF_S, op_desc);  // TODO: S not compliant for all operations
+					op_desc->var_wb = op_desc->w2 + 1; // "cmp $0,0x1234"
 					break;
 					}
 
@@ -829,6 +834,7 @@ static int class_1_C0h (byte_t code, op_desc_t * op_desc)
 
 				OP_ID = OP_MOV;
 				err = class_w_mod_rm_imm (0, op_desc);
+				op_desc->var_wb = op_desc->w2 + 1; // "mov $0,0x1234"
 				break;
 				}
 
