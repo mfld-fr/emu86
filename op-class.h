@@ -9,7 +9,6 @@
 // Opcode helpers
 
 #define OPCODE_MAX 6
-#define OPNAME_MAX 6
 
 extern char op_code_str [];
 extern byte_t op_code_pos;

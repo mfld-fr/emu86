@@ -4,12 +4,11 @@
 
 #include "op-common.h"
 
-
 // Operation identifiers
 
-// TODO: continuous ID to enable LUT
-
 #define OP_NULL     0xFFFF
+
+// Continuous ID's to enable LUT
 
 // LUT BEGIN
 

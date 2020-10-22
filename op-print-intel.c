@@ -171,20 +171,19 @@ void print_rel (byte_t prefix, short rel)
 
 void print_op (op_desc_t * op_desc)
 	{
-	char *name = op_id_to_name (OP_ID, 0, 0);
+	char *name = op_id_to_name (OP_ID);
 	if (!name) name = "???";
 	print_column (name, OPNAME_MAX + 2);
 
 	byte_t count = op_desc->var_count;
 
 	// Special case for string operations
+	// TODO: use 'wb' operation flag
 
 	if (!count && (OP_ID >= OP_STRING0) && (OP_ID < OP_STRING0 + 8))
 		{
 		printf (op_desc->w2 ? "WORD" : "BYTE");
 		}
-
-	// Common cases
 
 	if (count >= 1)
 		{

@@ -176,17 +176,41 @@ void print_op (op_desc_t * op_desc)
 	byte_t count = op_desc->var_count;
 
 	// Special case for string operations
+	// TODO: use 'wb' operation flag
 
 	if (!count && (OP_ID >= OP_STRING0) && (OP_ID < OP_STRING0 + 8))
 		{
 		op_desc->var_wb = op_desc->w2 + 1;
 		}
 
-	char *name = op_id_to_name (OP_ID, 1, op_desc->var_wb);
-	if (!name) name = "???";
-	print_column (name, OPNAME_MAX + 2);
+	char * name = op_id_to_name (OP_ID);
 
-	// Common cases
+	char name2 [OPNAME_MAX + 2];
+
+	if (!name)
+		{
+		strcpy (name2, "???");
+		}
+	else
+		{
+		// Lower case operation name
+
+		char * p = name;
+		char * q = name2;
+		while (*p) *q++ = *p++ - 'A' + 'a';
+
+		// Operation name suffix to explicit operand size
+
+		if (op_desc->var_wb == VP_BYTE)
+			*q++ = 'b';
+
+		if (op_desc->var_wb == VP_WORD)
+			*q++ = 'w';
+
+		*q = 0;
+		}
+
+	print_column (name2, OPNAME_MAX + 2);  // 1 space + optional suffix
 
 	if (count >= 2)
 		{

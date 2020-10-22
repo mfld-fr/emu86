@@ -456,8 +456,8 @@ void int_init ()
 	// ELKS saves and calls initial INT8 (timer)
 	// So implement a stub for INT8 at startup
 
-	mem_write_byte (0xFFFF0, 0xCF, 1);  // IRET @ FFFF:0h
-	mem_write_word (0x00020, 0x0000, 1);
+	mem_write_byte (0xFFFF8, 0xCF, 1);  // IRET @ FFFF:8h
+	mem_write_word (0x00020, 0x0008, 1);
 	mem_write_word (0x00022, 0xFFFF, 1);
 	}
 
