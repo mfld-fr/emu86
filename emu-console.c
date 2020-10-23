@@ -81,15 +81,22 @@ void serial_normal ()
 	tcsetattr(0, TCSANOW, &def_termios);
 	}
 
+static void catch_abort(int sig)
+	{
+	exit(1);
+	}
+
 void serial_init ()
 	{
 	tcgetattr(0, &def_termios);
 	signal(SIGINT, serial_catch);
 	serial_raw();
+	signal(SIGABRT, catch_abort);
+	atexit(serial_term);
 	}
 
 
 void serial_term ()
 	{
-	serial_normal();
+	if (def_termios.c_oflag) serial_normal();
 	}
