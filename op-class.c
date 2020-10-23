@@ -443,6 +443,10 @@ static int class_w_mod_rm_count (byte_t flags, op_desc_t * op)
 
 	scan_mod_rm (op->w2, op->mod, op->rm, var_rm);
 
+	// Explicit operation size on memory
+
+	if (var_rm->type == VT_MEM) op->var_wb = 1 + op->w2;
+
 	// Immediate value follows the MOD-RM displacement
 
 	var_imm->type  = VT_IMM;
