@@ -1,5 +1,5 @@
 // EMU86 - 80x86 emulator
-// Operation handling
+// Operation handlers
 
 #pragma once
 

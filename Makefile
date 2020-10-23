@@ -33,8 +33,8 @@ EMU86_OBJS = \
 # AT&T syntax (GNU default)
 # Intel syntax
 
-STYLE=att
-#STYLE=intel
+#STYLE=att
+STYLE=intel
 
 EMU86_OBJS += op-print-$(STYLE).o
 
@@ -42,10 +42,19 @@ EMU86_OBJS += op-print-$(STYLE).o
 # Connected to EMU86 stdin & stdout
 # Connected to PTY (created by EMU86)
 
-SERIAL=console
-#SERIAL=pty
+#SERIAL=console
+SERIAL=pty
 
 EMU86_OBJS += emu-$(SERIAL).o
+
+# Target selection
+# elks = minimal PC to run ELKS
+# advtech = Advantech SNMP-1000 SBC
+
+TARGET=elks
+#TARGET=advtech
+
+EMU86_OBJS += int-$(TARGET).o
 
 # PCAT utility for EMU86 serial port
 

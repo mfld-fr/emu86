@@ -365,7 +365,7 @@ static int class_w_mod_rm (byte_t flags, op_desc_t * op)
 
 	scan_mod_rm (op->w2, op->mod, op->rm, var_rm);
 
-	// Explicit operation size on memory
+	// Explicit operation size on memory access
 
 	if (var_rm->type == VT_MEM) op->var_wb = 1 + op->w2;
 
@@ -443,7 +443,7 @@ static int class_w_mod_rm_count (byte_t flags, op_desc_t * op)
 
 	scan_mod_rm (op->w2, op->mod, op->rm, var_rm);
 
-	// Explicit operation size on memory
+	// Explicit operation size on memory access
 
 	if (var_rm->type == VT_MEM) op->var_wb = 1 + op->w2;
 

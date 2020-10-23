@@ -1,5 +1,5 @@
 // EMU86 - 80x86 emulator
-// Operation handles
+// Operation handlers
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -940,36 +940,37 @@ static int op_jump_call (op_desc_t * op_desc)
 
 int exec_int (byte_t i)
 	{
-	int err = -1;
+	int err;
 
-	// Check interrupt vector first
+	// Try emulator handler first
 
-	addr_t vect = ((addr_t) i) << 2;
-	word_t ip = mem_read_word (vect);
-	word_t cs = mem_read_word (vect + 2);
+	err = int_hand (i);
+	if (err > 0) {
+		// Check interrupt vector
 
-	if (ip != 0xFFFF && cs != 0xFFFF)
-		{
-		// Emulate if vector initialized
+		addr_t vect = ((addr_t) i) << 2;
+		word_t ip = mem_read_word (vect);
+		word_t cs = mem_read_word (vect + 2);
 
-		stack_push (reg16_get (REG_FL));
-		stack_push (seg_get (SEG_CS));
-		stack_push (reg16_get (REG_IP));
+		// Call if vector initialized
 
-		reg16_set (REG_IP, ip);
-		seg_set (SEG_CS, cs);
+		if (ip != 0xFFFF && cs != 0xFFFF) {
+			stack_push (reg16_get (REG_FL));
+			stack_push (seg_get (SEG_CS));
+			stack_push (reg16_get (REG_IP));
 
-		flag_set (FLAG_TF, 0);
-		flag_set (FLAG_IF, 0);
+			reg16_set (REG_IP, ip);
+			seg_set (SEG_CS, cs);
 
-		err = 0;
-		}
-	else
-		{
-		// No vector initialized
-		// Use emulator default handler
+			flag_set (FLAG_TF, 0);
+			flag_set (FLAG_IF, 0);
 
-		err = int_hand (i);
+			err = 0;
+			}
+		else {
+			printf ("fatal: no handler for INT %hhXh\n", i);
+			err = -1;
+			}
 		}
 
 	return err;
