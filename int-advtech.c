@@ -10,8 +10,8 @@
 
 
 // BIOS video services
-
-static byte_t col_prev = 0;
+// Tweaked by Advantech
+// Redirected to serial port
 
 static byte_t num_hex (byte_t n)
 	{
@@ -35,60 +35,13 @@ static int int_10h ()
 
 	switch (ah)
 		{
-		// Set cursor position
-		// Detect new line as return to first column
+		// Print character
 
-		case 0x02:
-			c = reg8_get (REG_DL); // column
-			if (c == 0 && col_prev != 0)
-				{
-				//serial_send (13);  // CR
-				serial_send (10);  // LF
-				}
-
-			col_prev = c;
-			break;
-
-		// Get cursor position
-
-		case 0x03:
-			reg16_set (REG_CX, 0);  // null cursor
-			reg16_set (REG_DX, 0);  // upper-left corner (0,0)
-			break;
-
-		// Select active page
-
-		case 0x05:
-			break;
-
-		// Scroll up
-
-		case 0x06:
-			break;
-
-		// Write character at current cursor position
-
-		case 0x09:
 		case 0x0A:
-			serial_send (reg8_get (REG_AL));  // ADVTECH: redirect to serial port
+			serial_send (reg8_get (REG_AL));
 			break;
 
-		// Write as teletype to current page
-		// Page ignored in video mode 7
-
-		case 0x0E:
-			serial_send (reg8_get (REG_AL));  // Redirect to serial port
-			break;
-
-		// Get video mode
-
-		case 0x0F:
-			reg8_set (REG_AL, 7);   // text monochrome 80x25
-			reg8_set (REG_AH, 80);  // 80 columns
-			reg8_set (REG_BH, 0);   // page 0 active
-			break;
-
-		// Write string
+		// Print string
 
 		case 0x13:
 			es = seg_get (SEG_ES);
@@ -98,7 +51,7 @@ static int int_10h ()
 
 			while (cx--)
 				{
-				serial_send (mem_read_byte (a++));  // ADVTECH: redirect to serial port
+				serial_send (mem_read_byte (a++));
 				}
 
 			break;
@@ -108,9 +61,9 @@ static int int_10h ()
 		case 0x1D:
 			al = reg8_get (REG_AL);
 			c = num_hex (al >> 4);
-			serial_send (c);  // ADVTECH: redirect to serial port
+			serial_send (c);
 			c = num_hex (al & 0x0F);
-			serial_send (c);  // ADVTECH: redirect to serial port
+			serial_send (c);
 			break;
 
 		default:
@@ -121,42 +74,9 @@ static int int_10h ()
 	return 0;
 	}
 
-
-// BIOS memory services
-
-static int int_12h ()
-	{
-	// 512 KiB of low memory
-	// no extended memory
-
-	reg16_set (REG_AX, 512);
-	return 0;
-	}
-
-
-// BIOS misc services
-
-static int int_15h ()
-	{
-	byte_t ah = reg8_get (REG_AH);
-	switch (ah)
-		{
-		// Return CF=1 for all non implemented functions
-		// as recommended by Alan Cox on the ELKS mailing list
-
-		default:
-			flag_set (FLAG_CF, 1);
-
-		}
-
-	return 0;
-	}
-
-
 // BIOS keyboard services
-// WARNING: specific to ADVTECH SBC - not standard IBM BIOS
-
-static byte_t key_prev = 0;
+// Tweaked by Advantech
+// Redirected to serial port
 
 static int int_16h ()
 	{
@@ -167,36 +87,10 @@ static int int_16h ()
 	switch (ah)
 		{
 		// Keyboard initialization
+		// Do not intercept BIOS
 
 		case 0x00:
-			break;
-
-		// Peek character
-
-		case 0x01:
-			if (serial_poll ())
-				{
-				flag_set (FLAG_ZF, 0);
-				key_prev = serial_recv ();
-				if (key_prev == 0xFF)  // error
-					{
-					err = -1;
-					break;
-					}
-
-				reg8_set (REG_AL, key_prev);
-				reg8_set (REG_AH, 0);
-				}
-			else
-				{
-				flag_set (FLAG_ZF, 1);  // no character in buffer
-				}
-
-			break;
-
-		// Set typematic rate - ignore
-
-		case 0x03:
+			err = 1;
 			break;
 
 		// Read next char (blocking)
@@ -222,7 +116,9 @@ static int int_16h ()
 	}
 
 
-// BIOS serial services
+// BIOS printer services
+// Tweaked by Advantech
+// Redirected to serial port
 
 static int int_17h ()
 	{
@@ -235,6 +131,7 @@ static int int_17h ()
 			break;
 
 		default:
+			printf ("fatal: INT 17h: AH=%hxh not implemented\n", ah);
 			assert (0);
 		}
 
@@ -267,18 +164,20 @@ static int int_1Ah ()
 
 
 // BIOS Ethernet services
+// Tweaked by Advantech
 
 static int int_60h ()
 	{
 	byte_t ah = reg8_get (REG_AH);
 	switch (ah)
 		{
-		// ADVTECH: ethernet reset
+		// Ethernet reset
 
 		case 0x00:
 			break;
 
 		default:
+			printf ("fatal: INT 60h: AH=%hxh not implemented\n", ah);
 			assert (0);
 		}
 
@@ -287,6 +186,7 @@ static int int_60h ()
 
 
 // BIOS configuration services
+// Advantech specific
 
 static int int_D0h ()
 	{
@@ -302,20 +202,22 @@ static int int_D0h ()
 		// ADVTECH: program select (DIP SW) ?
 
 		case 0x01:
-			reg16_set (REG_AX, 1);  // program 01 -> MON86  11 -> TEST
+			reg16_set (REG_AX, 3);  // program 01 -> MON86  11 -> TEST
 			break;
 
-		// ADVTECH: RTC present ?
+		// No RTC emulated in EMU86
 
 		case 0x02:
-			reg16_set (REG_AX, 0);  // no RTC for EMU86
+			puts ("info: INT D0h AH=02h: reporting no RTC");
+			reg16_set (REG_AX, 0);
 			break;
 
-		// ADVTECH: CPU frequency
+		// Get CPU frequency
+		// Fixed to 20 MHz
 
 		case 0x03:
-			reg16_set (REG_AX, 16960);  // 1 MHz :-)
-			reg16_set (REG_DX, 15);
+			reg16_set (REG_AX, 11520);
+			reg16_set (REG_DX, 305);
 			break;
 
 		case 0x06:
@@ -323,6 +225,7 @@ static int int_D0h ()
 			break;
 
 		default:
+			printf ("fatal: INT D0h: AH=%hxh not implemented\n", ah);
 			assert (0);
 		}
 
@@ -331,6 +234,7 @@ static int int_D0h ()
 
 
 // BIOS misc services
+// Advantech specific
 
 static int int_D2h ()
 	{
@@ -344,6 +248,7 @@ static int int_D2h ()
 			break;
 
 		default:
+			printf ("fatal: INT D2h: AH=%hxh not implemented\n", ah);
 			assert (0);
 
 		}
@@ -357,8 +262,6 @@ static int int_D2h ()
 int_num_hand_t _int_tab [] = {
 	{ 0x03, int_03h },
 	{ 0x10, int_10h },
-	{ 0x12, int_12h },
-	{ 0x15, int_15h },
 	{ 0x16, int_16h },
 	{ 0x17, int_17h },
 	{ 0x1A, int_1Ah },
@@ -371,6 +274,6 @@ int_num_hand_t _int_tab [] = {
 
 // Interrupt initialization
 
-void int_init ()
+void int_init (void)
 	{
 	}

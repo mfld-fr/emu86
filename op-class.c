@@ -647,6 +647,12 @@ static int class_1_40h (byte_t code, op_desc_t * op_desc)
 		case 0x20:
 			if (code & 0x0E)
 				{
+				if (code == 0x6A) {
+					OP_ID = OP_PUSH;
+					err = class_imm (CF_1, op_desc);
+					break;
+					}
+
 				// Unknown opcodes for 8086
 				// TODO: complete with 80186 opcodes
 				err = -1;

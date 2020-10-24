@@ -13,7 +13,7 @@
 
 byte_t _break_int_flag = 0;
 
-int int_03h ()
+int int_03h (void)
 	{
 	//puts ("warning: INT3");
 	_break_int_flag = 1;

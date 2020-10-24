@@ -295,7 +295,7 @@ int_num_hand_t _int_tab [] = {
 
 // Interrupt initialization
 
-void int_init ()
+void int_init (void)
 	{
 	// ELKS saves and calls initial INT8 (timer)
 	// So implement a stub for INT8 at startup

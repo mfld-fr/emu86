@@ -1,6 +1,6 @@
 # EMU86 main makefile
 
-CFLAGS = -g
+CFLAGS = -g -Wall
 PREFIX = /usr/local
 
 # EMU86 main program
@@ -51,8 +51,8 @@ EMU86_OBJS += emu-$(SERIAL).o
 # elks = minimal PC to run ELKS
 # advtech = Advantech SNMP-1000 SBC
 
-TARGET=elks
-#TARGET=advtech
+#TARGET=elks
+TARGET=advtech
 
 EMU86_OBJS += int-$(TARGET).o
 

@@ -3,8 +3,8 @@ WHAT IS THIS ?
 EMU86 is yet another 8086/8088/80186/80188 emulator.
 
 That old 16-bit processor architecture is still used today in some devices
-(SBC, MCU, SoC, FPGA, etc) that reuse the huge hardware & code base from the
-legacy PC/XT/AT platform.
+(SBC, MCU, SoC, FPGA, etc) that reuse the huge hardware and code base from
+the legacy PC/XT/AT platform.
 
 This emulator is intended to help the related embedded software development,
 at the stage of testing / debugging the code on the development system before
@@ -32,7 +32,7 @@ Debugger features:
 - unhandled INT3 breakpoint
 - step in / over
 
-Emulated serial port is connected:
+Emulated serial port is redirected:
 
 * either to a pseudo-terminal (/dev/pts), with a bidirectional cat utility
 (pcat) to be able to redirect serial I/O from / to a file and thus easing
