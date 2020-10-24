@@ -14,6 +14,7 @@
 #include "emu-mem-io.h"
 #include "emu-proc.h"
 #include "emu-serial.h"
+#include "emu-timer.h"
 #include "emu-int.h"
 
 #include "op-exec.h"
@@ -77,6 +78,7 @@ static int file_load (addr_t start, char * path)
 
 
 // Program main
+
 int flag_prompt = 0;
 
 int main (int argc, char * argv [])
@@ -219,6 +221,7 @@ int main (int argc, char * argv [])
 			puts ("  -d <address>         data breakpoint address");
 			puts ("  -t                   trace mode");
 			puts ("  -i                   interactive mode");
+			puts ("  -p                   program mode");
 
 			exit_code = 1;
 			break;
@@ -227,6 +230,7 @@ int main (int argc, char * argv [])
 		// Main loop
 
 		int_init ();
+		timer_init ();
 		serial_init ();
 
 		op_code_base = mem_get_addr (0);
@@ -241,6 +245,29 @@ int main (int argc, char * argv [])
 
 		while (!flag_exit)
 			{
+			int flag_exec = 1;
+
+			// Animate emulated devices
+
+			timer_proc ();
+
+			err = serial_proc ();
+			if (err) {
+				flag_exec = 0;
+				flag_exit = 1;
+				break;
+				}
+
+			// Handle interrupt request
+
+			if (_int_req_flag && flag_get (FLAG_IF)) {
+				byte_t vect;
+				err = int_ack (&vect);
+				assert (!err);
+				err = exec_int (vect);
+				assert (!err);
+				}
+
 			// Decode next instruction
 
 			op_code_seg = seg_get (SEG_CS);
@@ -254,8 +281,6 @@ int main (int argc, char * argv [])
 				flag_trace = 1;
 				flag_prompt = 1;
 				}
-
-			int flag_exec = 1;
 
 			// Optimize: no twice decoding of the same instruction
 			// Example: REPeated or LOOP on itself

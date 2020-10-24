@@ -1,3 +1,7 @@
+//-------------------------------------------------------------------------------
+// EMU86 - Serial PTY backend
+//-------------------------------------------------------------------------------
+
 #define _DEFAULT_SOURCE    // for cfmakeraw()
 #define _XOPEN_SOURCE 600  // for posix_openpt() & ptsname()
 
@@ -16,37 +20,43 @@
 static int _ptm = -1;
 
 
-void serial_send (byte_t c)
+int serial_send (byte_t c)
 	{
+	int err = 0;
+
 	if (_ptm >= 0)
 		{
 		int n = write (_ptm, &c, 1);
 		if (n != 1)
 			{
-			perror ("warning: cannot write to PTM:");  // TODO: propagate error
+			perror ("warning: cannot write to PTM:");
+			err = -1;
 			}
 		}
+
+	return err;
 	}
 
 
-byte_t serial_recv ()
+int serial_recv (byte_t * c)
 	{
-	byte_t c = 0xFF;
+	int err = 0;
 
 	if (_ptm >= 0)
 		{
-		int n = read (_ptm, &c, 1);
+		int n = read (_ptm, c, 1);
 		if (n != 1)
 			{
-			perror ("warning: cannot read from PTM:");  // TODO: propagate error
+			perror ("warning: cannot read from PTM:");
+			err = -1;
 			}
 		}
 
-	return c;
+	return err;
 	}
 
 
-byte_t serial_poll ()
+int serial_poll ()
 	{
 	fd_set fdsr;
 	FD_ZERO (&fdsr);
@@ -98,6 +108,10 @@ void serial_init ()
 		int f = open ("emu86.pts", O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
 		write (f, path, strlen (path));
 		close (f);
+
+		// Initialize device
+
+		serial_dev_init ();
 
 		break;
 		}

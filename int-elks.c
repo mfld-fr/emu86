@@ -8,6 +8,35 @@
 #include "emu-serial.h"
 #include "emu-int.h"
 
+#include "int-elks.h"
+
+//------------------------------------------------------------------------------
+// Interrupt controller
+//------------------------------------------------------------------------------
+
+int _int_line_max = INT_LINE_MAX;
+int _int_prio_max = INT_PRIO_MAX;
+
+int _int_line [INT_LINE_MAX];
+
+int _int_prio [INT_LINE_MAX] =
+	{ 0, 1, 2, 3, 4, 5, 6, 7};
+
+int _int_vect [INT_LINE_MAX] =
+	{ 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F };
+
+int _int_mask [INT_LINE_MAX] =
+	{ 1, 1, 1, 1, 1, 1, 1, 1};
+
+int _int_req [INT_LINE_MAX] =
+	{ 0, 0, 0, 0, 0, 0, 0, 0};
+
+int _int_serv [INT_LINE_MAX] =
+	{ 0, 0, 0, 0, 0, 0, 0, 0};
+
+//------------------------------------------------------------------------------
+// Interrupt handlers
+//------------------------------------------------------------------------------
 
 // BIOS video services
 
@@ -126,7 +155,7 @@ static int int_10h ()
 
 static int int_12h ()
 	{
-	// 640 KiB of low memory
+	// 512 KiB of low memory
 	// no extended memory
 
 	reg16_set (REG_AX, 512);
@@ -175,12 +204,8 @@ static int int_16h ()
 				}
 			else
 				{
-				c = serial_recv ();
-				if (c == 0xFF)  // error
-					{
-					err = -1;
-					break;
-					}
+				err = serial_recv (&c);
+				if (err) break;
 
 				reg8_set (REG_AL, (byte_t) c);  // ASCII code
 				}
@@ -194,12 +219,8 @@ static int int_16h ()
 			if (serial_poll ())
 				{
 				flag_set (FLAG_ZF, 0);
-				key_prev = serial_recv ();
-				if (key_prev == 0xFF)  // error
-					{
-					err = -1;
-					break;
-					}
+				err = serial_recv (&key_prev);
+				if (err) break;
 
 				reg8_set (REG_AL, key_prev);
 				reg8_set (REG_AH, 0);
@@ -219,12 +240,8 @@ static int int_16h ()
 		// Extended keyboard read
 
 		case 0x10:
-			c = serial_recv ();
-			if (c == 0xFF)  // error
-				{
-				err = -1;
-				break;
-				}
+			err = serial_recv (&c);
+			if (err) break;
 
 			reg8_set (REG_AL, (byte_t) c);  // ASCII code
 			reg8_set (REG_AH, 0);           // No scan code

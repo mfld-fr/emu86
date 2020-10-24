@@ -13,8 +13,9 @@ EMU86_HDRS = \
 	op-class.h \
 	emu-mem-io.h \
 	emu-proc.h \
-	emu-serial.h \
 	emu-int.h \
+	emu-timer.h \
+	emu-serial.h \
 	op-exec.h \
 	# end of list
 
@@ -25,9 +26,10 @@ EMU86_OBJS = \
 	emu-mem-io.o \
 	emu-proc.o \
 	emu-int.o \
+	emu-serial.o \
 	op-exec.o \
 	emu-main.o \
-	#end of list
+	# end of list
 
 # Disassembly style
 # AT&T syntax (GNU default)
@@ -45,7 +47,7 @@ EMU86_OBJS += op-print-$(STYLE).o
 #SERIAL=console
 SERIAL=pty
 
-EMU86_OBJS += emu-$(SERIAL).o
+EMU86_OBJS += serial-$(SERIAL).o
 
 # Target selection
 # elks = minimal PC to run ELKS
@@ -54,13 +56,17 @@ EMU86_OBJS += emu-$(SERIAL).o
 #TARGET=elks
 TARGET=advtech
 
-EMU86_OBJS += int-$(TARGET).o
+EMU86_OBJS += \
+	io-$(TARGET).o \
+	int-$(TARGET).o \
+	timer-$(TARGET).o \
+	serial-$(TARGET).o \
+	# end of list
 
 # PCAT utility for EMU86 serial port
 
 PCAT_PROG = pcat
 
-PCAT_SRCS = pcat-main.c
 PCAT_OBJS = pcat-main.o
 
 # Rules

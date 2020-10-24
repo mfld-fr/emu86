@@ -345,6 +345,8 @@ static int op_swap (op_desc_t * op_desc)
 
 static int op_port (op_desc_t * op_desc)
 	{
+	int err;
+
 	assert (op_desc->var_count == 2);
 	op_var_t * to   = &op_desc->var_to;
 	op_var_t * from = &op_desc->var_from;
@@ -363,16 +365,8 @@ static int op_port (op_desc_t * op_desc)
 
 			data.type = VT_IMM;
 			data.w = to->w;
-			if (data.w)
-				{
-				data.val.w = io_read_word (port.val.w);
-				}
-			else
-				{
-				data.val.b = io_read_byte (port.val.w);
-				}
-
-			val_set (to, &data);
+			err = data.w ? io_read_word (port.val.w, &data.val.w) : io_read_byte (port.val.w, &data.val.b);
+			if (!err) val_set (to, &data);
 			break;
 
 		case OP_OUT:
@@ -380,16 +374,7 @@ static int op_port (op_desc_t * op_desc)
 			assert (port.type == VT_IMM);
 			assert (port.w);
 			val_get (from, &data);
-
-			if (data.w)
-				{
-				io_write_byte (port.val.w, data.val.w);
-				}
-			else
-				{
-				io_write_byte (port.val.w, data.val.b);
-				}
-
+			err = data.w ? io_write_word (port.val.w, data.val.w) : io_write_byte (port.val.w, data.val.b);
 			break;
 
 		default:
@@ -397,7 +382,7 @@ static int op_port (op_desc_t * op_desc)
 
 		}
 
-	return 0;
+	return err;
 	}
 
 
@@ -797,13 +782,13 @@ static int op_push (op_desc_t * op_desc)
 	{
 	assert (op_desc->var_count == 1);
 	op_var_t * var = &op_desc->var_to;
-	assert (var->w);
+	//assert (var->w);
 
 	op_var_t temp;
 	memset (&temp, 0, sizeof (op_var_t));
 
 	val_get (var, &temp);
-	assert (temp.w);
+	//assert (temp.w);
 	stack_push (temp.val.w);
 
 	return 0;
@@ -1168,8 +1153,6 @@ static int op_string (op_desc_t * op_desc)
 		{
 		// Repeat prefix
 
-		word_t cx;
-
 		if (_rep_stat == 2)
 			{
 			_rep_stat = 3;
@@ -1380,11 +1363,11 @@ static int op_flag_acc (op_desc_t * op_desc)
 
 
 // Halt
+// TODO: implement in main execution loop
 
 static int op_halt (op_desc_t * op_desc)
 	{
 	assert (OP_ID == OP_HLT);
-	exec_int (8);  // TEMP HACK
 	return 0;
 	}
 

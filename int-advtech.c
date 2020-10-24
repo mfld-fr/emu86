@@ -8,6 +8,53 @@
 #include "emu-serial.h"
 #include "emu-int.h"
 
+#include "int-advtech.h"
+
+//------------------------------------------------------------------------------
+// Interrupt controller
+//------------------------------------------------------------------------------
+
+#define INT_REG_VECT 0
+#define INT_REG_EOI  1
+
+int _int_line_max = INT_LINE_MAX;
+int _int_prio_max = INT_PRIO_MAX;
+
+int _int_line [INT_LINE_MAX];
+
+int _int_prio [INT_LINE_MAX] =
+	{ 0, 7, 1, 2, 3, 4, 5, 6, 7, 7, 0, 0, 7};
+
+int _int_vect [INT_LINE_MAX] =
+	{ 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14 };
+
+int _int_mask [INT_LINE_MAX] =
+	{ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0};  // FIXME: unmask timer & serial by program
+
+int _int_req [INT_LINE_MAX] =
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+int _int_serv [INT_LINE_MAX] =
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+
+// Interrupt I/O write
+
+int int_io_write (word_t p, word_t w)
+	{
+	int r = p >> 1;
+
+	if (r == INT_REG_EOI) {
+		if ((w & 0x001F) == 0x0008) int_end (INT_LINE_TIMER0);
+		if ((w & 0x001F) == 0x0014) int_end (INT_LINE_SERIAL);
+		}
+
+	return 0;
+	}
+
+//------------------------------------------------------------------------------
+// Interrupt handlers
+//------------------------------------------------------------------------------
 
 // BIOS video services
 // Tweaked by Advantech
@@ -96,12 +143,8 @@ static int int_16h ()
 		// Read next char (blocking)
 
 		case 0x10:
-			c = serial_recv ();
-			if (c == 0xFF)  // error
-				{
-				err = -1;
-				break;
-				}
+			err = serial_recv (&c);
+			if (err) break;
 
 			reg8_set (REG_AL, (byte_t) c);  // ASCII code
 			reg8_set (REG_AH, 0);           // No scan code
