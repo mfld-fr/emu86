@@ -32,17 +32,17 @@ EMU86_OBJS = \
 	# end of list
 
 # Disassembly style
-# AT&T syntax (GNU default)
-# Intel syntax
+# att = AT&T syntax (GNU default)
+# intel = Intel syntax
 
-#STYLE=att
-STYLE=intel
+STYLE=att
+#STYLE=intel
 
 EMU86_OBJS += op-print-$(STYLE).o
 
 # Serial emulation
-# Connected to EMU86 stdin & stdout
-# Connected to PTY (created by EMU86)
+# console = connected to EMU86 stdin & stdout
+# pty = connected to PTY (created by EMU86 as master)
 
 SERIAL=console
 #SERIAL=pty
@@ -53,8 +53,8 @@ EMU86_OBJS += serial-$(SERIAL).o
 # elks = minimal PC to run ELKS
 # advtech = Advantech SNMP-1000 SBC
 
-#TARGET=elks
-TARGET=advtech
+TARGET=elks
+#TARGET=advtech
 
 EMU86_OBJS += \
 	io-$(TARGET).o \
