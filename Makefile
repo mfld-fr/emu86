@@ -44,8 +44,8 @@ EMU86_OBJS += op-print-$(STYLE).o
 # Connected to EMU86 stdin & stdout
 # Connected to PTY (created by EMU86)
 
-#SERIAL=console
-SERIAL=pty
+SERIAL=console
+#SERIAL=pty
 
 EMU86_OBJS += serial-$(SERIAL).o
 
