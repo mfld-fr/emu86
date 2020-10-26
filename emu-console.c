@@ -20,7 +20,7 @@ void serial_send (byte_t c)
 	int n = write (1, &c, 1);
 	if (n != 1)
 		{
-		perror ("warning: cannot write to console:");  // TODO: propagate error
+		perror ("warning: cannot write to console");  // TODO: propagate error
 		}
 	}
 
@@ -29,11 +29,20 @@ byte_t serial_recv ()
 	{
 	byte_t c = 0xFF;
 
+	if (!serial_poll())
+		{
+		fd_set fdsr;
+		FD_ZERO (&fdsr);
+		FD_SET (0, &fdsr);
+		int s = select (1, &fdsr, NULL, NULL, NULL);
+		if (s < 0)
+			return -1;		// required for updated source when ^C hit on read
+		}
 	int n = read (0, &c, 1);
 	if (n == 0) return 0;
 	if (n != 1)
 		{
-		perror ("warning: cannot read from console:");  // TODO: propagate error
+		perror ("warning: cannot read from console");  // TODO: propagate error
 		}
 	if (c == 0x7f) c = '\b';	// convert DEL to BS
 
