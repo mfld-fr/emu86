@@ -3,10 +3,18 @@
 
 #include "op-common.h"
 
-void serial_send (byte_t c);
-byte_t serial_recv ();
+// Serial device
 
-byte_t serial_poll ();
+int serial_proc ();
+
+void serial_dev_init ();
+
+// Serial backend
+
+int serial_send (byte_t c);
+int serial_recv (byte_t * c);
+
+int serial_poll ();
 
 void serial_raw ();
 void serial_normal ();

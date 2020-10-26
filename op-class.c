@@ -365,7 +365,7 @@ static int class_w_mod_rm (byte_t flags, op_desc_t * op)
 
 	scan_mod_rm (op->w2, op->mod, op->rm, var_rm);
 
-	// Explicit operation size on memory
+	// Explicit operation size on memory access
 
 	if (var_rm->type == VT_MEM) op->var_wb = 1 + op->w2;
 
@@ -443,7 +443,7 @@ static int class_w_mod_rm_count (byte_t flags, op_desc_t * op)
 
 	scan_mod_rm (op->w2, op->mod, op->rm, var_rm);
 
-	// Explicit operation size on memory
+	// Explicit operation size on memory access
 
 	if (var_rm->type == VT_MEM) op->var_wb = 1 + op->w2;
 
@@ -647,6 +647,12 @@ static int class_1_40h (byte_t code, op_desc_t * op_desc)
 		case 0x20:
 			if (code & 0x0E)
 				{
+				if (code == 0x6A) {
+					OP_ID = OP_PUSH;
+					err = class_imm (CF_1, op_desc);
+					break;
+					}
+
 				// Unknown opcodes for 8086
 				// TODO: complete with 80186 opcodes
 				err = -1;

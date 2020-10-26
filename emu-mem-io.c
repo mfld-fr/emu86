@@ -5,9 +5,7 @@
 
 #include "emu-mem-io.h"
 
-
 static byte_t mem_stat [MEM_MAX];
-static byte_t io_stat  [IO_MAX];
 
 byte_t _break_data_flag = 0;
 addr_t _break_data_addr = 0x100000;
@@ -78,44 +76,9 @@ void mem_write_word (addr_t a, word_t w, byte_t init)
 		}
 	}
 
+//-------------------------------------------------------------------------------
 
-// I/O access
-
-byte_t io_read_byte (word_t p)
-	{
-	byte_t b = 0xFF;
-
-	// ADVTECH stubbing
-
-	switch (p)
-		{
-		case 0x0065:
-			b = 0x00;   // needed to exit loop @ F000:11B7h
-			break;
-
-		}
-
-	return b;
-	}
-
-
-word_t io_read_word (word_t p)
-	{
-	return 0xFFFF;
-	}
-
-
-void io_write_byte (word_t p, byte_t b)
-	{
-	}
-
-
- void io_write_word (word_t p, word_t w)
-	{
-	}
-
-
-// Reset
+// Memory reset
 
 void mem_io_reset ()
 	{
@@ -123,5 +86,7 @@ void mem_io_reset ()
 	// Used to check interrupt vector initialized in op_int()
 
 	memset (mem_stat, 0xFF, sizeof mem_stat);
-	memset (io_stat, 0xFF, sizeof io_stat);
 	}
+
+//-------------------------------------------------------------------------------
+

@@ -6,7 +6,6 @@
 #include <unistd.h>
 #include <assert.h>
 #include <sys/select.h>
-#include <termios.h>
 #include <signal.h>
 #include <sys/ioctl.h>
 
@@ -14,20 +13,25 @@
 
 static struct termios def_termios;
 
-void serial_send (byte_t c)
+int serial_send (byte_t c)
 	{
+	int err = 0;
+
 	//if (c == '\n') serial_send ('\r');	// may be needed for Linux terminal
 	int n = write (1, &c, 1);
 	if (n != 1)
 		{
-		perror ("warning: cannot write to console");  // TODO: propagate error
+		perror ("warning: cannot write to console");
+		err = -1;
 		}
+
+	return err;
 	}
 
 
-byte_t serial_recv ()
+int serial_recv (byte_t * c)
 	{
-	byte_t c = 0xFF;
+	int err = 0;
 
 	if (!serial_poll())
 		{
@@ -38,19 +42,22 @@ byte_t serial_recv ()
 		if (s < 0)
 			return -1;		// required for updated source when ^C hit on read
 		}
-	int n = read (0, &c, 1);
+
+	int n = read (0, c, 1);
 	if (n == 0) return 0;
 	if (n != 1)
 		{
-		perror ("warning: cannot read from console");  // TODO: propagate error
+		perror ("warning: cannot read from console");
+		err = -1;
 		}
-	if (c == 0x7f) c = '\b';	// convert DEL to BS
 
-	return c;
+	if (*c == 0x7f) *c = '\b';	// convert DEL to BS
+
+	return err;
 	}
 
 
-byte_t serial_poll ()
+int serial_poll ()
 	{
 	fd_set fdsr;
 	FD_ZERO (&fdsr);
@@ -70,6 +77,7 @@ void serial_catch ()
 	flag_prompt = 1;
 }
 
+
 void serial_raw ()
 	{
 	struct termios termios;
@@ -83,6 +91,7 @@ void serial_raw ()
 	ioctl(0, FIONBIO, &nonblock);
 	}
 
+
 void serial_normal ()
 	{
 	int nonblock = 0;
@@ -90,18 +99,24 @@ void serial_normal ()
 	tcsetattr(0, TCSANOW, &def_termios);
 	}
 
+
 static void catch_abort(int sig)
 	{
 	exit(1);
 	}
 
+
 void serial_init ()
 	{
 	tcgetattr(0, &def_termios);
+
 	signal(SIGINT, serial_catch);
 	serial_raw();
+
 	signal(SIGABRT, catch_abort);
 	atexit(serial_term);
+
+	serial_dev_init ();
 	}
 
 
@@ -109,3 +124,4 @@ void serial_term ()
 	{
 	if (def_termios.c_oflag) serial_normal();
 	}
+

@@ -1,5 +1,5 @@
 // EMU86 - 80x86 emulator
-// Operation handles
+// Operation handlers
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -345,6 +345,8 @@ static int op_swap (op_desc_t * op_desc)
 
 static int op_port (op_desc_t * op_desc)
 	{
+	int err;
+
 	assert (op_desc->var_count == 2);
 	op_var_t * to   = &op_desc->var_to;
 	op_var_t * from = &op_desc->var_from;
@@ -363,16 +365,8 @@ static int op_port (op_desc_t * op_desc)
 
 			data.type = VT_IMM;
 			data.w = to->w;
-			if (data.w)
-				{
-				data.val.w = io_read_word (port.val.w);
-				}
-			else
-				{
-				data.val.b = io_read_byte (port.val.w);
-				}
-
-			val_set (to, &data);
+			err = data.w ? io_read_word (port.val.w, &data.val.w) : io_read_byte (port.val.w, &data.val.b);
+			if (!err) val_set (to, &data);
 			break;
 
 		case OP_OUT:
@@ -380,16 +374,7 @@ static int op_port (op_desc_t * op_desc)
 			assert (port.type == VT_IMM);
 			assert (port.w);
 			val_get (from, &data);
-
-			if (data.w)
-				{
-				io_write_byte (port.val.w, data.val.w);
-				}
-			else
-				{
-				io_write_byte (port.val.w, data.val.b);
-				}
-
+			err = data.w ? io_write_word (port.val.w, data.val.w) : io_write_byte (port.val.w, data.val.b);
 			break;
 
 		default:
@@ -397,7 +382,7 @@ static int op_port (op_desc_t * op_desc)
 
 		}
 
-	return 0;
+	return err;
 	}
 
 
@@ -797,13 +782,13 @@ static int op_push (op_desc_t * op_desc)
 	{
 	assert (op_desc->var_count == 1);
 	op_var_t * var = &op_desc->var_to;
-	assert (var->w);
+	//assert (var->w);
 
 	op_var_t temp;
 	memset (&temp, 0, sizeof (op_var_t));
 
 	val_get (var, &temp);
-	assert (temp.w);
+	//assert (temp.w);
 	stack_push (temp.val.w);
 
 	return 0;
@@ -940,36 +925,37 @@ static int op_jump_call (op_desc_t * op_desc)
 
 int exec_int (byte_t i)
 	{
-	int err = -1;
+	int err;
 
-	// Check interrupt vector first
+	// Try emulator handler first
 
-	addr_t vect = ((addr_t) i) << 2;
-	word_t ip = mem_read_word (vect);
-	word_t cs = mem_read_word (vect + 2);
+	err = int_hand (i);
+	if (err > 0) {
+		// Check interrupt vector
 
-	if (ip != 0xFFFF && cs != 0xFFFF)
-		{
-		// Emulate if vector initialized
+		addr_t vect = ((addr_t) i) << 2;
+		word_t ip = mem_read_word (vect);
+		word_t cs = mem_read_word (vect + 2);
 
-		stack_push (reg16_get (REG_FL));
-		stack_push (seg_get (SEG_CS));
-		stack_push (reg16_get (REG_IP));
+		// Call if vector initialized
 
-		reg16_set (REG_IP, ip);
-		seg_set (SEG_CS, cs);
+		if (ip != 0xFFFF && cs != 0xFFFF) {
+			stack_push (reg16_get (REG_FL));
+			stack_push (seg_get (SEG_CS));
+			stack_push (reg16_get (REG_IP));
 
-		flag_set (FLAG_TF, 0);
-		flag_set (FLAG_IF, 0);
+			reg16_set (REG_IP, ip);
+			seg_set (SEG_CS, cs);
 
-		err = 0;
-		}
-	else
-		{
-		// No vector initialized
-		// Use emulator default handler
+			flag_set (FLAG_TF, 0);
+			flag_set (FLAG_IF, 0);
 
-		err = int_hand (i);
+			err = 0;
+			}
+		else {
+			printf ("fatal: no handler for INT %hhXh\n", i);
+			err = -1;
+			}
 		}
 
 	return err;
@@ -1166,8 +1152,6 @@ static int op_string (op_desc_t * op_desc)
 	while (1)
 		{
 		// Repeat prefix
-
-		word_t cx;
 
 		if (_rep_stat == 2)
 			{
@@ -1379,11 +1363,11 @@ static int op_flag_acc (op_desc_t * op_desc)
 
 
 // Halt
+// TODO: implement in main execution loop
 
 static int op_halt (op_desc_t * op_desc)
 	{
 	assert (OP_ID == OP_HLT);
-	exec_int (8);  // TEMP HACK
 	return 0;
 	}
 
