@@ -1368,7 +1368,9 @@ static int op_flag_acc (op_desc_t * op_desc)
 static int op_halt (op_desc_t * op_desc)
 	{
 	assert (OP_ID == OP_HLT);
+#ifdef ELKS
 	exec_int (8);  // TEMP HACK
+#endif
 	return 0;
 	}
 

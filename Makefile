@@ -55,6 +55,9 @@ EMU86_OBJS += serial-$(SERIAL).o
 
 TARGET=elks
 #TARGET=advtech
+ifeq ($(TARGET), elks)
+CFLAGS += -DELKS
+endif
 
 EMU86_OBJS += \
 	io-$(TARGET).o \
