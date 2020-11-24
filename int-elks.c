@@ -1,7 +1,10 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include <assert.h>
+#include <sys/stat.h>
 
 #include "emu-mem-io.h"
 #include "emu-proc.h"
@@ -9,6 +12,8 @@
 #include "emu-int.h"
 
 #include "int-elks.h"
+
+extern int info_level;
 
 //------------------------------------------------------------------------------
 // Interrupt controller
@@ -117,6 +122,23 @@ static int int_10h ()
 			reg8_set (REG_BH, 0);   // page 0 active
 			break;
 
+		// Get EGA video configuration
+
+		case 0x12:
+			reg8_set (REG_BH, 1);	// mono mode
+			reg8_set (REG_BL, 0);	// 64k EGA
+			reg8_set (REG_CH, 0);	// feature bits
+			reg8_set (REG_CL, 0);	// switch settings
+			break;
+
+		// Get VGA video configuration
+
+		case 0x1A:
+			if (reg8_get(REG_AL) != 0x00)
+				goto notimp;
+			reg8_set (REG_AL, 0);	// no VGA
+			break;
+
 		// Write string
 
 		case 0x13:
@@ -143,6 +165,8 @@ static int int_10h ()
 			break;
 
 		default:
+	notimp:
+			fflush(stdout);
 			printf ("fatal: INT 10h: AH=%hxh not implemented\n", ah);
 			assert (0);
 		}
@@ -159,6 +183,209 @@ static int int_12h ()
 	// no extended memory
 
 	reg16_set (REG_AX, 512);
+	return 0;
+	}
+
+
+// Image info
+
+struct diskinfo
+	{
+	byte_t drive;
+	word_t cylinders;
+	byte_t heads;
+	byte_t sectors;
+	int fd;
+	};
+
+struct diskinfo diskinfo[4] = {
+{    0, 0, 0, 0, -1 },
+{    0, 0, 0, 0, -1 },
+{    0, 0, 0, 0, -1 },
+{    0, 0, 0, 0, -1 }
+};
+
+#define SECTOR_SIZE 512
+
+static struct diskinfo * find_drive (byte_t drive)
+	{
+	struct diskinfo *dp;
+
+	for (dp = diskinfo; dp <= &diskinfo[sizeof(diskinfo)/sizeof(diskinfo[0])]; dp++)
+		if (dp->fd != -1 && dp->drive == drive)
+			return dp;
+	return NULL;
+	}
+
+
+int image_load (char * path)
+	{
+	byte_t d = 0, h, s;
+	word_t c;
+	struct diskinfo *dp;
+	struct stat sbuf;
+
+	int fd = open (path, O_RDWR);
+	if (fd < 0)
+		{
+		printf ("Can't open disk image: %s\n", path);
+		return 1;
+		}
+	if (fstat (fd, &sbuf) < 0)
+		{
+		perror(path);
+		return 1;
+		}
+	off_t size = sbuf.st_size / 1024;
+	switch (size)
+		{
+		case 360:   c = 40; h = 2; s =  9; break;
+		case 720:   c = 80; h = 2; s =  9; break;
+		case 1440:  c = 80; h = 2; s = 18; break;
+		case 2880:  c = 80; h = 2; s = 36; break;
+		default:
+			if (size < 2880)
+				{
+				printf ("Image size not supported: %s\n", path);
+				close (fd);
+				return 1;
+				}
+			d = 0x80;
+			if (size <= 1032192UL)	// = 1024 * 16 * 63
+				{
+				c = 63; h = 16; s = 63;
+				}
+			else
+				{
+				c = (size / 4032) + 1;
+				h = 64;
+				s = 63;
+				}
+			break;
+		}
+
+		for (dp = diskinfo; dp <= &diskinfo[sizeof(diskinfo)/sizeof(diskinfo[0])]; dp++)
+			{
+			if (dp->fd == -1)
+				{
+				if (find_drive (d)) d++;
+				dp->drive = d;
+				dp->cylinders = c;
+				dp->heads = h;
+				dp->sectors = s;
+				dp->fd = fd;
+				printf ("info: disk image %s (DCHS %d/%d/%d/%d)\n", path, d, c, h, s);
+				return 0;
+				}
+			}
+
+		printf("Too many disk images: %s ignored\n", path);
+		close (fd);
+		return 1;
+	}
+
+
+// Read/write disk
+
+static int readwrite_sector (byte_t drive, int write, unsigned long lba,
+			word_t seg, word_t off)
+	{
+	int err = -1;
+	struct diskinfo *dp = find_drive (drive);
+	if (!dp) return err;
+
+	while (1)
+		{
+
+		off_t o = lseek (dp->fd, lba * SECTOR_SIZE, SEEK_SET);
+		if (o == -1) break;
+
+		ssize_t l = read (dp->fd, mem_get_addr (addr_seg_off (seg, off)), SECTOR_SIZE);
+		if (l != SECTOR_SIZE) break;
+
+		// success
+
+		err = 0;
+		break;
+		}
+
+	return err;
+	}
+
+
+// BIOS disk services
+
+static int int_13h ()
+	{
+	byte_t ah = reg8_get (REG_AH);
+	byte_t d, h, s, n;
+	word_t c, seg, off;
+	int i, err = 1;
+	struct diskinfo *dp;
+
+	switch (ah)
+		{
+		case 0x00:  // reset drive
+			break;
+
+		case 0x02:  // read disk
+		case 0x03:  // write disk
+			d = reg8_get (REG_DL);        // drive
+			c = reg8_get (REG_CH) | ((reg8_get (REG_CL) & 0xC0) << 2);
+			h = reg8_get (REG_DH);        // head
+			s = reg8_get (REG_CL) & 0x3F; // sector, base 1
+			n = reg8_get (REG_AL);        // count
+			seg = seg_get (SEG_ES);
+			off = reg16_get (REG_BX);
+
+			if (info_level & 1) printf ("%s: DCHS %d/%d/%d/%d @%x:%x, %d sectors\n",
+				ah==2? "read_sector": "write_sector", d, c, h, s, seg, off, n);
+
+			dp = find_drive (d);
+			if (!dp || c >= dp->cylinders || h >= dp->heads || s > dp->sectors)
+				{
+				printf("INT 13h fn %xh: Invalid DCHS %d/%d/%d/%d\n", ah, d, c, h, s);
+				break;
+				}
+
+			if (s + n > dp->sectors + 1)
+				{
+				printf("INT 13h fn %xh: Multi-track I/O operation rejected\n", ah);
+				break;
+				}
+
+			off_t lba = (s-1) + dp->sectors * (h + c * dp->heads);
+			err = 0;
+			while (n-- != 0)
+				{
+				err |= readwrite_sector (d, ah==3, lba, seg, off);
+				lba++;
+				off += SECTOR_SIZE;
+				}
+			break;
+
+		case 0x08:  // get drive parms
+			d = reg8_get (REG_DL);
+			dp = find_drive (d);
+			if (!dp) break;
+			c = dp->cylinders - 1;
+			n = find_drive (d+1)? 2: 1;
+			reg8_set (REG_BL, 4);   // CMOS 1.44M floppy
+			reg8_set (REG_DL, n);   // # drives
+			reg8_set (REG_CH, c & 0xFF);
+			reg8_set (REG_CL, dp->sectors | (((c >> 8) & 0x03) << 6));
+			reg8_set (REG_DH, dp->heads - 1);
+			seg_set (SEG_ES, 0xFF00);   // fake DDPT, same as INT 1Eh
+			reg16_set (REG_DI, 0x0000);
+			err = 0;
+			break;
+
+		default:
+			printf ("fatal: INT 13h: AH=%hxh not implemented\n", ah);
+			assert (0);
+		}
+
+	flag_set (FLAG_CF, err? 1: 0);
 	return 0;
 	}
 
@@ -271,6 +498,22 @@ static int int_17h ()
 	return 0;
 	}
 
+// BIOS default boot
+
+static int int_19h ()
+	{
+	// Boot from first sector of first disk
+	byte_t d = diskinfo[0].drive;
+
+	if (readwrite_sector (d, 0, 0L, 0x0000, 0x7C00)) return -1;
+
+	reg8_set (REG_DL, d);  // DL = BIOS boot drive number
+	seg_set (SEG_CS, 0x0000);
+	reg16_set (REG_IP, 0x7C00);
+
+	return 0;
+	}
+
 
 // BIOS time services
 
@@ -302,9 +545,11 @@ int_num_hand_t _int_tab [] = {
 	{ 0x03, int_03h },
 	{ 0x10, int_10h },
 	{ 0x12, int_12h },
+	{ 0x13, int_13h },  // BIOS disk services
 	{ 0x15, int_15h },
 	{ 0x16, int_16h },
 	{ 0x17, int_17h },
+	{ 0x19, int_19h },  // BIOS default boot
 	{ 0x1A, int_1Ah },
 	{ 0,    NULL    }
 	};
@@ -317,8 +562,19 @@ void int_init (void)
 	// ELKS saves and calls initial INT8 (timer)
 	// So implement a stub for INT8 at startup
 
-	mem_write_byte (0xFFFF8, 0xCF, 1);  // IRET @ FFFF:8h
-	mem_write_word (0x00020, 0x0008, 1);
-	mem_write_word (0x00022, 0xFFFF, 1);
+	mem_write_byte (0xFFF00, 0xCF, 1);  // IRET @ FFF0:0h
+
+	mem_write_word (0x00020, 0x0000, 1);
+	mem_write_word (0x00022, 0xFFF0, 1);
+
+	// Jump to BIOS boot on reset
+
+	mem_write_byte (0xFFFF0, 0xCD, 1);  // INT 19h
+	mem_write_byte (0xFFFF1, 0x19, 1);
+
+	// Dummy pointer to disk drive parameter table (DDPT) at INT 1Eh
+
+	mem_write_word (0x00078, 0x0000, 1);
+	mem_write_word (0x0007A, 0xFF00, 1);
 	}
 

@@ -19,6 +19,7 @@
 
 #include "op-exec.h"
 
+extern int image_load (char * path);
 
 static int file_load (addr_t start, char * path)
 	{
@@ -53,7 +54,7 @@ static int file_load (addr_t start, char * path)
 		lseek (fd, 0, SEEK_SET);
 
 		byte_t * buf = mem_get_addr (start);
-		off_t count = read (fd, buf, size);
+		ssize_t count = read (fd, buf, size);
 		if (count != size)
 			{
 			puts ("fatal: incomplete file read");
@@ -80,6 +81,7 @@ static int file_load (addr_t start, char * path)
 // Program main
 
 int flag_prompt = 0;
+int info_level;
 
 int main (int argc, char * argv [])
 	{
@@ -91,6 +93,7 @@ int main (int argc, char * argv [])
 		proc_reset ();
 
 		char * file_path = NULL;
+		char * disk_image_path = NULL;
 		addr_t file_address = -1;
 		int file_loaded = 0;
 
@@ -114,7 +117,7 @@ int main (int argc, char * argv [])
 
 		while (1)
 			{
-			opt = getopt (argc, argv, "w:f:x:c:d:tip");
+			opt = getopt (argc, argv, "w:f:I:x:c:d:v:tip");
 			if (opt < 0 || opt == '?') break;
 
 			switch (opt)
@@ -134,6 +137,10 @@ int main (int argc, char * argv [])
 				case 'f':  // file path
 					file_path = optarg;
 					printf ("info: load file %s\n", file_path);
+					break;
+
+				case 'I':  // disk image file path
+					disk_image_path = optarg;
 					break;
 
 				// Execution address:
@@ -187,6 +194,10 @@ int main (int argc, char * argv [])
 					flag_prompt = 1;
 					break;
 
+				case 'v':  // verbose output level
+					info_level = atoi(optarg);
+					break;
+
 				// Program mode:
 				// used when running a stand-alone executable
 				// in the tiny memory model where CS=DS=ES=SS
@@ -209,6 +220,17 @@ int main (int argc, char * argv [])
 				file_path = NULL;
 				file_address = -1;
 				}
+#ifdef ELKS
+			if (disk_image_path)
+				{
+				if (!image_load (disk_image_path))
+					{
+					file_loaded = 1;
+					}
+
+				disk_image_path = NULL;
+				}
+#endif
 			}
 
 		if (opt == '?' || optind != argc || !file_loaded)
@@ -216,12 +238,14 @@ int main (int argc, char * argv [])
 			printf ("usage: %s [options]\n\n", argv [0]);
 			puts ("  -w <address>         load address");
 			puts ("  -f <path>            file path");
+			puts ("  -I <path>            disk image path");
 			puts ("  -x <segment:offset>  execute address");
 			puts ("  -c <address>         code breakpoint address");
 			puts ("  -d <address>         data breakpoint address");
 			puts ("  -t                   trace mode");
 			puts ("  -i                   interactive mode");
 			puts ("  -p                   program mode");
+			puts ("  -v <level>           verbose info level");
 
 			exit_code = 1;
 			break;

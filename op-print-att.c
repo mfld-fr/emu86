@@ -187,7 +187,13 @@ void print_op (op_desc_t * op_desc)
 
 		char * p = name;
 		char * q = name2;
-		while (*p) *q++ = *p++ - 'A' + 'a';
+		while (*p)
+			{
+			if (*p >= 'A')
+				*q++ = *p++ - 'A' + 'a';
+			else
+				*q++ = *p++;
+			}
 
 		// Operation name suffix to explicit operand size
 

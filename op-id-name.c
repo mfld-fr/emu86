@@ -64,6 +64,7 @@ static op_id_name_t id_name_tab [] = {
 	{ OP_LOOP,   "LOOP"   },
 	{ OP_LOOPNZ, "LOOPNZ" },
 	{ OP_LOOPZ,  "LOOPZ"  },
+	{ OP_JCXZ,   "JCXZ"   },
 	{ OP_MOV,    "MOV"    },
 	{ OP_MOVS,   "MOVS"   },
 	{ OP_MUL,    "MUL"    },
