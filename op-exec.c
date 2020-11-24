@@ -17,6 +17,7 @@
 
 #include "op-exec.h"
 
+extern int info_level;
 
 // Segment prefix
 
@@ -414,9 +415,7 @@ static int op_calc_1 (op_desc_t * op_desc)
 		case OP_MUL:
 			if (temp.w)
 				{
-				word_t ax = reg16_get (REG_AX);
-				word_t dx = reg16_get (REG_DX);
-				dword_t t = (((dword_t) dx) << 16) | (dword_t) ax;
+				dword_t t = (dword_t) reg16_get (REG_AX);
 				t *= v;
 				reg16_set (REG_AX, (word_t) (t & 0xFFFF));
 				reg16_set (REG_DX, (word_t) (t >> 16));
@@ -433,9 +432,7 @@ static int op_calc_1 (op_desc_t * op_desc)
 		case OP_IMUL:
 			if (temp.w)
 				{
-				word_t ax = reg16_get (REG_AX);
-				word_t dx = reg16_get (REG_DX);
-				dword_t t = (((dword_t) dx) << 16) | (dword_t) ax;
+				dword_t t = (dword_t) reg16_get (REG_AX);
 				t = (dword_t) (((long) t) * (long) (short) v);
 				reg16_set (REG_AX, (word_t) (t & 0xFFFF));
 				reg16_set (REG_DX, (word_t) (t >> 16));
@@ -929,6 +926,7 @@ int exec_int (byte_t i)
 
 	// Try emulator handler first
 
+	if (info_level & 2) printf("[INT %02xh AX=%04x]\n", i, reg16_get(REG_AX));
 	err = int_hand (i);
 	if (err > 0) {
 		// Check interrupt vector
@@ -998,11 +996,17 @@ static int op_int (op_desc_t * op_desc)
 static int op_return (op_desc_t * op_desc)
 	{
 	word_t op = OP_ID;
+	word_t n = 0;
 	assert (op == OP_RET || op == OP_RETF || op == OP_IRET);
 
-	// TODO: implement stack unwind
-
-	assert (!op_desc->var_count);
+	assert (op_desc->var_count <= 1);
+	if (op_desc->var_count == 1)
+		{
+		op_var_t * var = &op_desc->var_to;
+		assert (var->type == VT_IMM);
+		assert (var->w);
+		n = var->val.w;
+		}
 
 	reg16_set (REG_IP, stack_pop ());
 
@@ -1014,6 +1018,12 @@ static int op_return (op_desc_t * op_desc)
 	if (op == OP_IRET)
 		{
 		reg16_set (REG_FL, stack_pop ());
+		}
+
+	if (n)
+		{
+		word_t sp = reg16_get (REG_SP) + n;
+		reg16_set (REG_SP, sp);
 		}
 
 	return 0;
