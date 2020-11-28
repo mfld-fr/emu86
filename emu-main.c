@@ -20,6 +20,7 @@
 #include "op-exec.h"
 
 extern int image_load (char * path);
+extern void image_close (void);
 
 static int file_load (addr_t start, char * path)
 	{
@@ -504,6 +505,9 @@ int main (int argc, char * argv [])
 
 	// Cleanup
 
+#ifdef ELKS
+	image_close ();
+#endif
 	serial_term ();
 
 	return exit_code;
