@@ -284,10 +284,20 @@ int image_load (char * path)
 		return 1;
 	}
 
+void image_close (void)
+		{
+		struct diskinfo *dp;
+		for (dp = diskinfo; dp <= &diskinfo[sizeof(diskinfo)/sizeof(diskinfo[0])]; dp++)
+			{
+			if (dp->fd != -1)
+				close (dp->fd);
+			}
+		}
+
 
 // Read/write disk
 
-static int readwrite_sector (byte_t drive, int write, unsigned long lba,
+static int readwrite_sector (byte_t drive, int wflag, unsigned long lba,
 			word_t seg, word_t off)
 	{
 	int err = -1;
@@ -296,11 +306,15 @@ static int readwrite_sector (byte_t drive, int write, unsigned long lba,
 
 	while (1)
 		{
+		ssize_t l;
+		ssize_t (*op)();
 
 		off_t o = lseek (dp->fd, lba * SECTOR_SIZE, SEEK_SET);
 		if (o == -1) break;
 
-		ssize_t l = read (dp->fd, mem_get_addr (addr_seg_off (seg, off)), SECTOR_SIZE);
+		op = read;
+		if (wflag) op = write;
+		l = (*op) (dp->fd, mem_get_addr (addr_seg_off (seg, off)), SECTOR_SIZE);
 		if (l != SECTOR_SIZE) break;
 
 		// success
@@ -320,7 +334,7 @@ static int int_13h ()
 	byte_t ah = reg8_get (REG_AH);
 	byte_t d, h, s, n;
 	word_t c, seg, off;
-	int i, err = 1;
+	int err = 1;
 	struct diskinfo *dp;
 
 	switch (ah)
