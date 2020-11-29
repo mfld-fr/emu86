@@ -81,11 +81,12 @@ void serial_catch ()
 void serial_raw ()
 	{
 	struct termios termios;
+	fflush(stdout);
 	tcgetattr(0, &termios);
 	termios.c_iflag &= ~(ICRNL|IGNCR|INLCR);
 	//termios.c_oflag &= ~(OPOST);
 	termios.c_lflag &= ~(ECHO|ECHOE|ECHONL|ICANON);
-	tcsetattr(0, TCSANOW, &termios);
+	tcsetattr(0, TCSADRAIN, &termios);
 
 	int nonblock = 1;
 	ioctl(0, FIONBIO, &nonblock);
@@ -95,8 +96,9 @@ void serial_raw ()
 void serial_normal ()
 	{
 	int nonblock = 0;
+	fflush(stdout);
 	ioctl(0, FIONBIO, &nonblock);
-	tcsetattr(0, TCSANOW, &def_termios);
+	tcsetattr(0, TCSADRAIN, &def_termios);
 	}
 
 
@@ -108,9 +110,14 @@ static void catch_abort(int sig)
 
 void serial_init ()
 	{
+#ifdef __APPLE__
+	static char buf[1];
+	setvbuf(stdout, buf, _IOFBF, sizeof(buf));
+#endif
 	tcgetattr(0, &def_termios);
 
 	signal(SIGINT, serial_catch);
+	siginterrupt(SIGINT, 0);
 	serial_raw();
 
 	signal(SIGABRT, catch_abort);

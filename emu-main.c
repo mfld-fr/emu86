@@ -348,7 +348,6 @@ int main (int argc, char * argv [])
 			if (flag_trace)
 				{
 				// Print processor status
-
 				printf ("%.4hX:%.4hX  ", seg_get (SEG_CS), reg16_get (REG_IP));
 				print_column (op_code_str, 3 * OPCODE_MAX + 1);
 				print_op (&desc);
@@ -366,6 +365,7 @@ int main (int argc, char * argv [])
 				char com [8];
 				if (!flag_trace) putchar ('\n');
 				putchar ('>');
+				fflush(stdout);
 				char * res = fgets (com, 8, stdin);
 				if (!res) break;
 				serial_raw();
