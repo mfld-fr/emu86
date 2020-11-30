@@ -87,6 +87,7 @@ int info_level;
 int main (int argc, char * argv [])
 	{
 	int exit_code = 0;
+	int instr_count = 0;
 
 	while (1)
 		{
@@ -292,6 +293,14 @@ int main (int argc, char * argv [])
 				err = exec_int (vect);
 				assert (!err);
 				}
+
+#ifdef ELKS
+				if (++instr_count > 20000 && flag_get(FLAG_IF) && rep_none() && seg_none())
+					{
+					exec_int (0x08);	// force timer 0 interrupt
+					instr_count = 0;
+					}
+#endif
 
 			// Decode next instruction
 
