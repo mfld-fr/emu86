@@ -1,7 +1,5 @@
 #pragma once
 
-#include "op-common.h"
-
 // Interrupt lines
 
 #define INT_LINE_TIMER 0

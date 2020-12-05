@@ -31,7 +31,7 @@ int _int_vect [INT_LINE_MAX] =
 	{ 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F };
 
 int _int_mask [INT_LINE_MAX] =
-	{ 1, 1, 1, 1, 1, 1, 1, 1};
+	{ 0, 1, 1, 1, 1, 1, 1, 1};  // timer unmasked by default
 
 int _int_req [INT_LINE_MAX] =
 	{ 0, 0, 0, 0, 0, 0, 0, 0};
