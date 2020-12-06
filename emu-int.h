@@ -5,19 +5,20 @@
 
 // Generic interrupt controller
 
+#define INT_LEVEL 0  // level triggered
+#define INT_EDGE  1  // rising edge triggered
+
 extern int _int_line_max;
 extern int _int_prio_max;
 
-// TODO: remove useless line array
+extern int _int_mode [];  // level or edge
+extern int _int_prio [];  // priority
+extern int _int_vect [];  // vector (0..255 for IA16)
+extern int _int_mask [];  // mask flag
+extern int _int_req  [];  // requested flag
+extern int _int_serv [];  // serviced flag
 
-extern int _int_line [];
-extern int _int_prio [];
-extern int _int_vect [];
-extern int _int_mask [];
-extern int _int_req  [];
-extern int _int_serv [];
-
-extern int _int_req_flag;
+extern int _int_signal;    // from controller to processor
 
 void int_line_set (int line, int stat);
 int int_ack (byte_t * vect);

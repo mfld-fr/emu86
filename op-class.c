@@ -724,12 +724,10 @@ static int class_1_80h (byte_t code, op_desc_t * op_desc)
 	{
 	int err = -1;
 
-	byte_t code_2 = 0;
-
 	switch (code & 0x30)
 		{
 		case 0x00:
-			code_2 = fetch_code_2 (op_desc);
+			fetch_code_2 (op_desc);
 
 			if (!(code & 0x04))
 				{

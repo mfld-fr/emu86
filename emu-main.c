@@ -221,6 +221,7 @@ int main (int argc, char * argv [])
 				file_path = NULL;
 				file_address = -1;
 				}
+
 #ifdef ELKS
 			if (disk_image_path)
 				{
@@ -232,6 +233,7 @@ int main (int argc, char * argv [])
 				disk_image_path = NULL;
 				}
 #endif
+
 			}
 
 		if (opt == '?' || optind != argc || !file_loaded)
@@ -285,7 +287,7 @@ int main (int argc, char * argv [])
 
 			// Handle interrupt request
 
-			if (_int_req_flag && flag_get (FLAG_IF) && rep_none() && seg_none())
+			if (_int_signal && flag_get (FLAG_IF) && rep_none () && seg_none ())
 				{
 				byte_t vect;
 				err = int_ack (&vect);
@@ -509,6 +511,7 @@ int main (int argc, char * argv [])
 #ifdef ELKS
 	image_close ();
 #endif
+
 	serial_term ();
 
 	return exit_code;

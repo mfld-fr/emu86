@@ -22,7 +22,10 @@ extern int info_level;
 int _int_line_max = INT_LINE_MAX;
 int _int_prio_max = INT_PRIO_MAX;
 
-int _int_line [INT_LINE_MAX];
+// All edge triggered for PC/XT/AT
+
+int _int_mode [INT_LINE_MAX] =
+	{ 1, 1, 1, 1, 1, 1, 1, 1};
 
 int _int_prio [INT_LINE_MAX] =
 	{ 0, 1, 2, 3, 4, 5, 6, 7};

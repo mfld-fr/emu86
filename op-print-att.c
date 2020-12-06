@@ -13,8 +13,6 @@
 
 // Opcode helpers
 
-extern byte_t * op_code_base;
-extern word_t op_code_seg;
 extern word_t op_code_off;
 
 char op_code_str [3 * OPCODE_MAX + 2];

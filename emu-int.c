@@ -15,31 +15,46 @@
 // Interrupt controller
 //------------------------------------------------------------------------------
 
-int _int_req_flag = 0;
+int _int_signal = 0;
 
 // Interrupt controller procedure
 
 static void int_proc ()
 	{
-	for (int line = 0; line < _int_line_max; line++) {
-		// Ignore masked or already requested or already serviced
+	int sig = 0;
 
-		if (_int_line [line] && !_int_mask [line]
-			&& !_int_req [line] && !_int_serv [line]) {
-			// Request processor interrupt
+	for (int line = 0; line < _int_line_max; line++)
+		{
+		// Ignore requested if already serviced
 
-			_int_req [line] = 1;
-			_int_req_flag = 1;
+		if (_int_req [line] && !_int_serv [line])
+			{
+			// At least one to signal
+
+			sig = 1;
+			break;
 			}
 		}
+
+	_int_signal = sig;
 	}
 
 // Set interrupt line
 
 void int_line_set (int line, int stat)
 	{
-	// TODO: level triggered only
-	_int_line [line] = stat;
+	if (stat)
+		{
+		// Ignore the signal if masked
+
+		if (!_int_mask [line]) _int_req [line] = 1;
+		}
+	else
+		{
+		// Cancel request in level mode
+
+		if (_int_mode [line] == INT_LEVEL) _int_req [line] = 0;
+		}
 
 	int_proc ();
 	}
@@ -69,10 +84,9 @@ int int_ack (byte_t * vect)
 		// TODO: manage spurious request
 		if (req < 0) assert (0);
 
+		if (_int_mode [req] == INT_EDGE) _int_req [req] = 0;
 		*vect = _int_vect [req];
-		_int_req  [req] = 0;
 		_int_serv [req] = 1;
-		_int_req_flag = 0;
 
 		int_proc ();
 		err = 0;
@@ -108,6 +122,7 @@ int int_03h (void)
 	return 0;
 	}
 
+//------------------------------------------------------------------------------
 
 // Search for emulated interrupt handler
 
@@ -140,3 +155,4 @@ int int_hand (byte_t i)
 	return err;
 	}
 
+//------------------------------------------------------------------------------
