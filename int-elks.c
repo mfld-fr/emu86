@@ -512,9 +512,9 @@ static int int_17h ()
 	return 0;
 	}
 
-// BIOS default boot
+// Disk boot
 
-static int int_19h ()
+static int int_FEh ()
 	{
 	// Boot from first sector of first disk
 	byte_t d = diskinfo[0].drive;
@@ -563,11 +563,34 @@ int_num_hand_t _int_tab [] = {
 	{ 0x15, int_15h },
 	{ 0x16, int_16h },
 	{ 0x17, int_17h },
-	{ 0x19, int_19h },  // BIOS default boot
+//	{ 0x19, int_19h },  // OS boot
 	{ 0x1A, int_1Ah },
+	{ 0xFE, int_FEh },  // disk boot
+//	{ 0xFF, int_FFh },  // reserved for MON86
 	{ 0,    NULL    }
 	};
 
+// BIOS extension check
+
+static addr_t bios_boot = 0xF0000;
+
+static void bios_check (addr_t b, int size)
+	{
+	byte_t sum = 0;
+
+	for (addr_t a = b; a < (b + size); a++)
+		sum += mem_read_byte (a);
+
+	if (sum == 0)
+		{
+		// Add CALLF to valid extension
+
+		mem_write_byte (bios_boot, 0x9A, 1);  // CALLF
+		mem_write_word (bios_boot + 1, 0x0003, 1);
+		mem_write_word (bios_boot + 3, b >> 4, 1);
+		bios_boot += 5;
+		}
+	}
 
 // Interrupt initialization
 
@@ -576,19 +599,60 @@ void int_init (void)
 	// ELKS saves and calls initial INT8 (timer)
 	// So implement a stub for INT8 at startup
 
-	mem_write_byte (0xFFF00, 0xCF, 1);  // IRET @ FFF0:0h
+	mem_write_byte (0xF1000, 0xCF, 1);  // IRET @ F000:1000h
 
-	mem_write_word (0x00020, 0x0000, 1);
-	mem_write_word (0x00022, 0xFFF0, 1);
-
-	// Jump to BIOS boot on reset
-
-	mem_write_byte (0xFFFF0, 0xCD, 1);  // INT 19h
-	mem_write_byte (0xFFFF1, 0x19, 1);
+	mem_write_word (0x00020, 0x1000, 1);
+	mem_write_word (0x00022, 0xF000, 1);
 
 	// Dummy pointer to disk drive parameter table (DDPT) at INT 1Eh
 
-	mem_write_word (0x00078, 0x0000, 1);
-	mem_write_word (0x0007A, 0xFF00, 1);
+	mem_write_word (0x00078, 0x2000, 1);
+	mem_write_word (0x0007A, 0xF000, 1);
+
+	// Scan ROM for any BIOS extension
+
+	for (addr_t a = 0xC8000; a < 0xE0000; a += 0x00800)  // each 2K
+		{
+		if (mem_read_word (a) == 0xAA55)
+			{
+			int len = mem_read_byte (a + 2) * 512;
+			bios_check (a, len);
+			}
+		}
+
+	// Extension @ E000:0h must be 64K
+
+	if (mem_read_word (0xE0000) == 0xAA55)
+		{
+		bios_check (0xE0000, 0x10000);
+		}
+
+	if (bios_boot != 0xF0000)
+		{
+		// End BIOS boot with INT 19h for OS boot
+
+		mem_write_byte (bios_boot++, 0xCD, 1);  // INT 19h
+		mem_write_byte (bios_boot++, 0x19, 1);
+		}
+	else
+		{
+		// No extension
+		// Redirect to INT FEh for disk boot
+
+		mem_write_byte (bios_boot++, 0xCD, 1);  // INT FEh
+		mem_write_byte (bios_boot++, 0xFE, 1);
+
+		// Point INT 19h to BIOS boot
+
+		mem_write_word (0x00064, 0x0000, 1);
+		mem_write_word (0x00066, 0xF000, 1);
+		}
+
+	// CPU boot @ FFFF:0h
+	// Jump to BIOS boot
+
+	mem_write_byte (0xFFFF0, 0xEA,   1);  // JMPF
+	mem_write_word (0xFFFF1, 0x0000, 1);
+	mem_write_word (0xFFFF3, 0xF000, 1);
 	}
 
