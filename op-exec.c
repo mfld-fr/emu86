@@ -1454,6 +1454,62 @@ static int op_xlat (op_desc_t * op_desc)
 	return 0;
 	}
 
+
+// Enter/Leave
+
+static int op_enter (op_desc_t * op_desc)
+	{
+	assert (OP_ID == OP_ENTER);
+	assert (op_desc->var_count == 2);
+	op_var_t * var_level = &op_desc->var_from;
+	assert (var_level->type == VT_IMM);
+	assert (var_level->w == 0);
+	assert (var_level->val.b < 32);
+	op_var_t * var_allocate = &op_desc->var_to;
+	assert (var_allocate->type == VT_IMM);
+	assert (var_allocate->w == 1);
+
+	word_t bp = reg16_get (REG_BP);
+	stack_push (bp);
+
+	word_t sp = reg16_get (REG_SP);
+
+	if (var_level->val.b > 0)
+		{
+			byte_t i;
+			for (i = 0; i < var_level->val.b; i++)
+			{
+				bp -= 2;
+				reg16_set(REG_BP, bp);
+				stack_push(bp);
+			}
+			stack_push(sp);
+		}
+
+	reg16_set(REG_BP, sp);
+	if (var_allocate->val.b > 0)
+		{
+			sp -= var_allocate->val.b;
+			reg16_set(REG_SP, sp);
+		}
+
+	return 0;
+	}
+
+static int op_leave (op_desc_t * op_desc)
+	{
+	assert (OP_ID == OP_LEAVE);
+	assert (op_desc->var_count == 0);
+
+	word_t bp = reg16_get (REG_BP);
+	reg16_set(REG_SP, bp);
+
+	bp = stack_pop();
+	reg16_set(REG_BP, bp);
+
+	return 0;
+	}
+
 // Table of operation handlers
 
 typedef int (* op_hand_t) (op_desc_t * op_desc);
@@ -1607,6 +1663,9 @@ static op_id_hand_t _id_hand_tab [] = {
 
 	{ OP_WAIT,     NULL         },
 	{ OP_ESC,      NULL         },
+
+	{ OP_ENTER,	   op_enter     },
+	{ OP_LEAVE,	   op_leave     },
 
 	{ OP_NULL,     NULL         }  // end of table
 	};

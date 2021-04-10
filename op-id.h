@@ -167,4 +167,7 @@
 #define OP_WAIT     0x006B
 #define OP_ESC      0x006C
 
+#define OP_ENTER    0x006D
+#define OP_LEAVE    0x006E
+
 // LUT END

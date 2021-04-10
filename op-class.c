@@ -125,6 +125,45 @@ static int class_imm (byte_t flags, op_desc_t * op)
 	return 0;
 	}
 
+static int class_imm_imm (byte_t flags_to, byte_t flags_from, op_desc_t * op)
+	{
+	op->var_count = 2;
+
+	op_var_t * var_imm_to = &(op->var_to);
+	op_var_t * var_imm_from = &(op->var_from);
+
+	var_imm_to->type  = VT_IMM;
+	var_imm_to->s = 0;
+
+	var_imm_from->type  = VT_IMM;
+	var_imm_from->s = 0;
+
+	if (flags_to & CF_1)
+		{
+		var_imm_to->w = 0;
+		var_imm_to->val.b = fetch_byte ();
+		}
+
+	if (flags_to & CF_2)
+		{
+		var_imm_to->w = 1;
+		var_imm_to->val.w = fetch_word ();
+		}
+
+	if (flags_from & CF_1)
+		{
+		var_imm_from->w = 0;
+		var_imm_from->val.b = fetch_byte ();
+		}
+
+	if (flags_from & CF_2)
+		{
+		var_imm_from->w = 1;
+		var_imm_from->val.w = fetch_word ();
+		}
+
+	return 0;
+	}
 
 static int class_off (byte_t flags, op_desc_t * op)
 	{
@@ -652,6 +691,11 @@ static int class_1_40h (byte_t code, op_desc_t * op_desc)
 					err = class_imm (CF_1, op_desc);
 					break;
 					}
+				else if (code == 0x68) {
+					OP_ID = OP_PUSH;
+					err = class_imm (CF_2, op_desc);
+					break;
+					}
 
 				// Unknown opcodes for 8086
 				// TODO: complete with 80186 opcodes
@@ -871,8 +915,16 @@ static int class_1_C0h (byte_t code, op_desc_t * op_desc)
 				{
 				if (!(code & 0x02))
 					{
-					// TODO: ENTER (C8h) and LEAVE (C9h)
-					err = -1;
+					if (code == 0xc8)
+						{
+							OP_ID = OP_ENTER;
+							err = class_imm_imm(CF_2, CF_1, op_desc);
+						}
+						else
+						{
+							OP_ID = OP_LEAVE;
+							err = 0;
+						}
 					break;
 					}
 
