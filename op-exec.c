@@ -1446,9 +1446,9 @@ static int op_xlat (op_desc_t * op_desc)
 	assert (op_desc->var_count == 0);
 
 	word_t bx = reg16_get (REG_BX);
-	word_t ds = seg_get (SEG_DS);
+	word_t source_seg = seg_over_get (NULL);
 
-	addr_t a = addr_seg_off (ds, bx + (word_t) reg8_get (REG_AL));
+	addr_t a = addr_seg_off (source_seg, bx + (word_t) reg8_get (REG_AL));
 	reg8_set (REG_AL, mem_read_byte (a));
 
 	return 0;
