@@ -82,7 +82,7 @@ int int_ack (byte_t * vect)
 			}
 
 		// TODO: manage spurious request
-		if (req < 0) assert (0);
+		assert (req >= 0);
 
 		if (_int_mode [req] == INT_EDGE) _int_req [req] = 0;
 		*vect = _int_vect [req];
@@ -96,15 +96,41 @@ int int_ack (byte_t * vect)
 	return err;
 	}
 
-// End of interrupt service
-// Explicit mode
+// End of interrupt servicing (EOI)
+// Explicit mode with specified INT line
 
-void int_end (int line)
+void int_end_line (int line)
 	{
-	// TODO: manage spurious end
+	// TODO: manage spurious EOI
 	assert (_int_serv [line] == 1);
 
 	_int_serv [line] = 0;
+
+	int_proc ();
+	}
+
+// End of interrupt servicing (EOI)
+// Implicit mode based on priority
+
+void int_end_prio ()
+	{
+	// Get serviced of top priority
+
+	int serv = -1;
+	int prio_min = _int_prio_max;
+
+	for (int line = 0; line < _int_line_max; line++) {
+		int prio = _int_prio [line];
+		if (_int_serv [line] && prio < prio_min) {
+			serv = line;
+			prio_min = prio;
+			}
+		}
+
+	// TODO: manage spurious EOI
+	assert (serv >= 0);
+
+	_int_serv [serv] = 0;
 
 	int_proc ();
 	}

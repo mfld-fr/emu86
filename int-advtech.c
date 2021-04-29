@@ -48,8 +48,8 @@ int int_io_write (word_t p, word_t w)
 	int r = p >> 1;
 
 	if (r == INT_REG_EOI) {
-		if ((w & 0x001F) == 0x0008) int_end (INT_LINE_TIMER0);
-		if ((w & 0x001F) == 0x0014) int_end (INT_LINE_SERIAL);
+		if ((w & 0x001F) == 0x0008) int_end_line (INT_LINE_TIMER0);
+		if ((w & 0x001F) == 0x0014) int_end_line (INT_LINE_SERIAL);
 		}
 
 	return 0;

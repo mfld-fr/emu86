@@ -22,7 +22,8 @@ extern int _int_signal;    // from controller to processor
 
 void int_line_set (int line, int stat);
 int int_ack (byte_t * vect);
-void int_end (int line);
+void int_end_line (int line);
+void int_end_prio ();
 
 // Breakpoint interrupt
 
