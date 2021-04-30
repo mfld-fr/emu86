@@ -87,7 +87,6 @@ int info_level;
 int main (int argc, char * argv [])
 	{
 	int exit_code = 0;
-	int instr_count = 0;
 
 	while (1)
 		{
@@ -222,6 +221,7 @@ int main (int argc, char * argv [])
 				file_path = NULL;
 				file_address = -1;
 				}
+
 #ifdef ELKS
 			if (disk_image_path)
 				{
@@ -233,6 +233,7 @@ int main (int argc, char * argv [])
 				disk_image_path = NULL;
 				}
 #endif
+
 			}
 
 		if (opt == '?' || optind != argc || !file_loaded)
@@ -286,21 +287,14 @@ int main (int argc, char * argv [])
 
 			// Handle interrupt request
 
-			if (_int_req_flag && flag_get (FLAG_IF)) {
+			if (_int_signal && flag_get (FLAG_IF) && rep_none () && seg_none ())
+				{
 				byte_t vect;
 				err = int_ack (&vect);
 				assert (!err);
 				err = exec_int (vect);
 				assert (!err);
 				}
-
-#ifdef ELKS
-				if (++instr_count > 20000 && flag_get(FLAG_IF) && rep_none() && seg_none())
-					{
-					exec_int (0x08);	// force timer 0 interrupt
-					instr_count = 0;
-					}
-#endif
 
 			// Decode next instruction
 
@@ -517,6 +511,7 @@ int main (int argc, char * argv [])
 #ifdef ELKS
 	image_close ();
 #endif
+
 	serial_term ();
 
 	return exit_code;

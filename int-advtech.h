@@ -25,4 +25,3 @@
 #define INT_PRIO_MAX    8
 
 int int_io_write (word_t p, word_t w);
-

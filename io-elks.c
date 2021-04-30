@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include "emu-mem-io.h"
+#include "int-elks.h"
 
 extern int info_level;
 
@@ -30,8 +31,10 @@ int io_write_byte (word_t p, byte_t b)
 	{
 	switch (p)
 		{
-		case 0x20:		// 8259 EOI
+		case 0x20:  // 8259 PIC
+			int_io_write (p - 0x20, b);
 			break;
+
 		default:
 			if (info_level & 4) printf("[OUTB %3xh AL %0xh]\n", p, b);
 		}

@@ -22,7 +22,10 @@ extern int info_level;
 int _int_line_max = INT_LINE_MAX;
 int _int_prio_max = INT_PRIO_MAX;
 
-int _int_line [INT_LINE_MAX];
+// All edge triggered for PC/XT/AT
+
+int _int_mode [INT_LINE_MAX] =
+	{ 1, 1, 1, 1, 1, 1, 1, 1};
 
 int _int_prio [INT_LINE_MAX] =
 	{ 0, 1, 2, 3, 4, 5, 6, 7};
@@ -31,13 +34,27 @@ int _int_vect [INT_LINE_MAX] =
 	{ 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F };
 
 int _int_mask [INT_LINE_MAX] =
-	{ 1, 1, 1, 1, 1, 1, 1, 1};
+	{ 0, 1, 1, 1, 1, 1, 1, 1};  // timer unmasked by default
 
 int _int_req [INT_LINE_MAX] =
 	{ 0, 0, 0, 0, 0, 0, 0, 0};
 
 int _int_serv [INT_LINE_MAX] =
 	{ 0, 0, 0, 0, 0, 0, 0, 0};
+
+
+// Interrupt I/O write
+
+int int_io_write (word_t p, byte_t b)
+	{
+	if (p == 0) {
+		if (b == 0x20) {  // EOI
+			int_end_prio ();
+			}
+		}
+
+	return 0;
+	}
 
 //------------------------------------------------------------------------------
 // Interrupt handlers
@@ -570,9 +587,11 @@ int_num_hand_t _int_tab [] = {
 	{ 0,    NULL    }
 	};
 
-// BIOS extension check
+// BIOS boot sequence starts @ F000:0h
 
 static addr_t bios_boot = 0xF0000;
+
+// BIOS extension check
 
 static void bios_check (addr_t b, int size)
 	{
@@ -583,7 +602,7 @@ static void bios_check (addr_t b, int size)
 
 	if (sum == 0)
 		{
-		// Add CALLF to valid extension
+		// Append a far call to any detected extension to the BIOS boot sequence
 
 		mem_write_byte (bios_boot, 0x9A, 1);  // CALLF
 		mem_write_word (bios_boot + 1, 0x0003, 1);
@@ -596,22 +615,32 @@ static void bios_check (addr_t b, int size)
 
 void int_init (void)
 	{
-	// ELKS saves and calls initial INT8 (timer)
-	// So implement a stub for INT8 at startup
+	// ELKS saves and calls initial INT 08h (timer)
+	// So implement a stub for INT 08h that just EOI
+	// Starting @ F000:1000h
 
-	mem_write_byte (0xF1000, 0xCF, 1);  // IRET @ F000:1000h
+	mem_write_byte (0xF1000, 0xB0, 1);  // MOV AL,20h
+	mem_write_byte (0xF1001, 0x20, 1);
+	mem_write_byte (0xF1002, 0xE6, 1);  // OUT 20h,AL
+	mem_write_byte (0xF1003, 0x20, 1);
+	mem_write_byte (0xF1004, 0xCF, 1);  // IRET
+
+	// Point vector 08h to that stub
 
 	mem_write_word (0x00020, 0x1000, 1);
 	mem_write_word (0x00022, 0xF000, 1);
 
-	// Dummy pointer to disk drive parameter table (DDPT) at INT 1Eh
+	// Point vector 1Eh to a dummy disk drive parameter table (DDPT)
+	// Required by the disk boot sector
+	// Starting @ F000:2000h
 
 	mem_write_word (0x00078, 0x2000, 1);
 	mem_write_word (0x0007A, 0xF000, 1);
 
-	// Scan ROM for any BIOS extension
+	// Scan ROM area for any BIOS extension
+	// Any extension must be aligned to 2K
 
-	for (addr_t a = 0xC8000; a < 0xE0000; a += 0x00800)  // each 2K
+	for (addr_t a = 0xC8000; a < 0xE0000; a += 0x00800)
 		{
 		if (mem_read_word (a) == 0xAA55)
 			{
@@ -620,7 +649,7 @@ void int_init (void)
 			}
 		}
 
-	// Extension @ E000:0h must be 64K
+	// Any extension @ E000:0h must be 64K
 
 	if (mem_read_word (0xE0000) == 0xAA55)
 		{
@@ -629,7 +658,8 @@ void int_init (void)
 
 	if (bios_boot != 0xF0000)
 		{
-		// End BIOS boot with INT 19h for OS boot
+		// End BIOS boot sequence with INT 19h for OS boot
+		// FIXME: At least one extension is assumed to setup the vector 19h (OS boot)
 
 		mem_write_byte (bios_boot++, 0xCD, 1);  // INT 19h
 		mem_write_byte (bios_boot++, 0x19, 1);
@@ -638,6 +668,7 @@ void int_init (void)
 		{
 		// No extension
 		// Redirect to INT FEh for disk boot
+		// FIXME: replace by default INT 19h implementation that boots from disk
 
 		mem_write_byte (bios_boot++, 0xCD, 1);  // INT FEh
 		mem_write_byte (bios_boot++, 0xFE, 1);
@@ -648,11 +679,10 @@ void int_init (void)
 		mem_write_word (0x00066, 0xF000, 1);
 		}
 
-	// CPU boot @ FFFF:0h
+	// CPU boot starts @ FFFF:0h
 	// Jump to BIOS boot
 
 	mem_write_byte (0xFFFF0, 0xEA,   1);  // JMPF
 	mem_write_word (0xFFFF1, 0x0000, 1);
 	mem_write_word (0xFFFF3, 0xF000, 1);
 	}
-
