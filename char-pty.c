@@ -1,5 +1,5 @@
 //-------------------------------------------------------------------------------
-// EMU86 - Serial PTY backend
+// EMU86 - PTY character backend
 //-------------------------------------------------------------------------------
 
 #define _DEFAULT_SOURCE    // for cfmakeraw()
@@ -14,13 +14,13 @@
 #include <assert.h>
 #include <sys/select.h>
 
-#include "emu-serial.h"
+#include "emu-char.h"
 
 
 static int _ptm = -1;
 
 
-int serial_send (byte_t c)
+int char_send (byte_t c)
 	{
 	int err = 0;
 
@@ -38,7 +38,7 @@ int serial_send (byte_t c)
 	}
 
 
-int serial_recv (byte_t * c)
+int char_recv (byte_t * c)
 	{
 	int err = 0;
 
@@ -56,7 +56,7 @@ int serial_recv (byte_t * c)
 	}
 
 
-int serial_poll ()
+int char_poll ()
 	{
 	fd_set fdsr;
 	FD_ZERO (&fdsr);
@@ -69,16 +69,16 @@ int serial_poll ()
 	}
 
 
-void serial_raw ()
+void char_raw ()
 	{
 	}
 
-void serial_normal ()
+void char_normal ()
 	{
 	}
 
 
-void serial_init ()
+int char_init ()
 	{
 	while (1)
 		{
@@ -109,16 +109,14 @@ void serial_init ()
 		write (f, path, strlen (path));
 		close (f);
 
-		// Initialize device
-
-		serial_dev_init ();
-
 		break;
 		}
+
+	return 0;
 	}
 
 
-void serial_term ()
+void char_term ()
 	{
 	unlink ("emu86.pts");
 

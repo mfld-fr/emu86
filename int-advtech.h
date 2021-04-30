@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "op-common.h"
+#include "emu-types.h"
 
 // Interrupt lines
 

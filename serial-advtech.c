@@ -132,7 +132,7 @@ int serial_io_write (word_t p, word_t  w)
 
 // Serial device initialization
 
-void serial_dev_init ()
+void serial_init ()
 	{
 	// Initialize registers
 

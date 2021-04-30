@@ -5,11 +5,11 @@
 #include <stdio.h>
 #include <assert.h>
 
+#include "op-common.h"
 #include "op-class.h"
 
 #include "emu-mem-io.h"
 #include "emu-proc.h"
-
 
 struct proc_regs_s
 	{

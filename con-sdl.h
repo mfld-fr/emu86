@@ -1,7 +1,5 @@
-/* serial-sdl.h*/
+/* con-sdl.h */
 
-int sdl_init(void);
-void sdl_close(void);
 int sdl_pollevents(void);
 void sdl_draw(int x, int y, int width, int height);
 void sdl_textout(unsigned char c);
@@ -23,7 +21,6 @@ typedef unsigned short MWIMAGEBITS;/* bitmap image unit size*/
 #define	MWIMAGE_SHIFTBIT(m)	((MWIMAGEBITS) ((m) << 1))  /* for testbit*/
 
 /* keyboard*/
-typedef unsigned int MWKEYMOD;
 typedef unsigned short MWKEY;
 typedef unsigned short MWSCANCODE;
 
@@ -124,32 +121,8 @@ typedef unsigned short MWSCANCODE;
 #define MWKEY_CANCEL		0xF847
 #define MWKEY_APP1		0xF848
 #define MWKEY_APP2		0xF849
-#define MWKEY_APP3              0xF84A
-#define MWKEY_APP4              0xF84B
-#define MWKEY_SUSPEND           0xF84C
-#define MWKEY_END_NORMAL	0xF84D	/* insert additional keys before this*/
 
-/* keyboard state modifiers*/
-#define MWKMOD_NONE  		0x0000
-#define MWKMOD_LSHIFT		0x0001
-#define MWKMOD_RSHIFT		0x0002
-#define MWKMOD_LCTRL 		0x0040
-#define MWKMOD_RCTRL 		0x0080
-#define MWKMOD_LALT  		0x0100
-#define MWKMOD_RALT  		0x0200
-#define MWKMOD_LMETA 		0x0400		/* Windows key*/
-#define MWKMOD_RMETA 		0x0800		/* Windows key*/
-#define MWKMOD_NUM   		0x1000
-#define MWKMOD_CAPS  		0x2000
-#define MWKMOD_ALTGR 		0x4000
-#define MWKMOD_SCR			0x8000
-
-#define MWKMOD_CTRL	(MWKMOD_LCTRL|MWKMOD_RCTRL)
-#define MWKMOD_SHIFT	(MWKMOD_LSHIFT|MWKMOD_RSHIFT)
-#define MWKMOD_ALT	(MWKMOD_LALT|MWKMOD_RALT)
-#define MWKMOD_META	(MWKMOD_LMETA|MWKMOD_RMETA)
-
-int sdl_readkbd(MWKEY *kbuf, MWKEYMOD *modifiers, MWSCANCODE *scancode);
+int sdl_readkbd(MWKEY *kbuf, MWSCANCODE *scancode);
 int sdl_pollkbd(void);
 
 /* mouse*/

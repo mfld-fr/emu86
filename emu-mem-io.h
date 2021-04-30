@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include "op-common.h"
+#include "emu-types.h"
 
 
 #define MEM_MAX 0x100000  // 1 MB

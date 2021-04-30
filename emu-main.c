@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include "op-common.h"
 #include "op-class.h"
 
 #include "emu-mem-io.h"
@@ -16,6 +17,7 @@
 #include "emu-serial.h"
 #include "emu-timer.h"
 #include "emu-int.h"
+#include "emu-con.h"
 
 #include "op-exec.h"
 
@@ -111,6 +113,7 @@ void main_loop(void)
 #ifdef ELKS
 		image_close ();
 #endif
+		con_term ();
 		serial_term ();
 
 		exit(0);
@@ -214,14 +217,14 @@ void main_loop(void)
 printf("exiting at prompt\n");
 exit(1);
 #endif
-				serial_normal();
+				con_normal();
 				char com [8];
 				if (!flag_trace) putchar ('\n');
 				putchar ('>');
 				fflush(stdout);
 				char * res = fgets (com, 8, stdin);
 				if (!res) return;
-				serial_raw();
+				con_raw();
 
 				switch (com [0])
 					{
@@ -521,12 +524,11 @@ int main (int argc, char * argv [])
 			exit(1);
 			}
 
-		rom_init ();  // ROM stub initialization
-		int_init ();  // PIC initialization
-
-		timer_init ();
-
-		serial_init ();
+		rom_init ();     // ROM stub initialization
+		int_init ();     // PIC initialization
+		timer_init ();   // PIT initialization
+		serial_init ();  // Serial port initialization
+		con_init ();     // Console initialization
 
 		break;
 		}
@@ -544,5 +546,6 @@ int main (int argc, char * argv [])
 			}
 #endif
 		}
+
 	return 0;
 	}
