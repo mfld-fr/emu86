@@ -56,7 +56,7 @@ static int file_load (addr_t start, char * path)
 			break;
 			}
 
-		printf ("info: file size=%llXh\n", size);
+		printf ("info: file size=%lXh\n", size);
 		if (start + size > MEM_MAX)
 			{
 			puts ("fatal: file too big");
@@ -97,7 +97,6 @@ int info_level = 0;
 static int flag_trace = 0;
 static int flag_exit = 0;
 static addr_t break_code_addr = -1;
-static int instr_count = 0;
 
 void main_loop(void)
 	{
@@ -522,7 +521,8 @@ int main (int argc, char * argv [])
 			exit(1);
 			}
 
-		int_init ();
+		rom_init ();  // ROM stub initialization
+		int_init ();  // PIC initialization
 
 		timer_init ();
 

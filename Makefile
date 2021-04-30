@@ -88,6 +88,7 @@ EMU86_OBJS += \
 	int-$(TARGET).o \
 	timer-$(TARGET).o \
 	serial-$(TARGET).o \
+	rom-$(TARGET).o \
 	# end of list
 
 # PCAT utility for EMU86 serial port
