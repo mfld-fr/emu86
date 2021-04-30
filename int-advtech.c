@@ -20,7 +20,10 @@
 int _int_line_max = INT_LINE_MAX;
 int _int_prio_max = INT_PRIO_MAX;
 
-int _int_line [INT_LINE_MAX];
+// Timers are edge triggered
+
+int _int_mode [INT_LINE_MAX] =
+	{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0};
 
 int _int_prio [INT_LINE_MAX] =
 	{ 0, 7, 1, 2, 3, 4, 5, 6, 7, 7, 0, 0, 7};
@@ -45,8 +48,8 @@ int int_io_write (word_t p, word_t w)
 	int r = p >> 1;
 
 	if (r == INT_REG_EOI) {
-		if ((w & 0x001F) == 0x0008) int_end (INT_LINE_TIMER0);
-		if ((w & 0x001F) == 0x0014) int_end (INT_LINE_SERIAL);
+		if ((w & 0x001F) == 0x0008) int_end_line (INT_LINE_TIMER0);
+		if ((w & 0x001F) == 0x0014) int_end_line (INT_LINE_SERIAL);
 		}
 
 	return 0;

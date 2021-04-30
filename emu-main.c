@@ -134,21 +134,14 @@ void main_loop(void)
 
 			// Handle interrupt request
 
-			if (_int_req_flag && flag_get (FLAG_IF)) {
+			if (_int_signal && flag_get (FLAG_IF) && rep_none () && seg_none ())
+				{
 				byte_t vect;
 				err = int_ack (&vect);
 				assert (!err);
 				err = exec_int (vect);
 				assert (!err);
 				}
-
-#ifdef ELKS
-				if (++instr_count > INST_TIMER && flag_get(FLAG_IF) && rep_none() && seg_none())
-					{
-					exec_int (0x08);	// force timer 0 interrupt
-					instr_count = 0;
-					}
-#endif
 
 			// Decode next instruction
 

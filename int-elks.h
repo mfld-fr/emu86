@@ -1,7 +1,5 @@
 #pragma once
 
-#include "op-common.h"
-
 // Interrupt lines
 
 #define INT_LINE_TIMER 0
@@ -19,3 +17,4 @@
 
 #define INT_PRIO_MAX    8
 
+int int_io_write (word_t p, byte_t b);
