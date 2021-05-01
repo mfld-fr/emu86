@@ -4,11 +4,9 @@ on:
   push:
     branches:
       - master
-      - sdl
   pull_request:
     branches:
       - master
-      - sdl
 
 jobs:
   build:
@@ -17,7 +15,19 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: clean
-      run: make clean
-    - name: make
+    - name: make_def
       run: make
+    - name: clean_def
+      run: make clean
+    - name: conf_elks
+      run: cp config-elks.mk config.mk
+    - name: make_elks
+      run: make
+    - name: clean_elks
+      run: make clean
+    - name: conf_advtech
+      run: cp config-advtech.mk config.mk
+    - name: make_advtech
+      run: make
+    - name: clean_advtech
+      run: make clean
