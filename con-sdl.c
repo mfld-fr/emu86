@@ -6,8 +6,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <SDL2/SDL.h>
-#include "serial-sdl.h"
-#include "emu-serial.h"
+
+#include "con-sdl.h"
+#include "emu-con.h"
 
 /* configurable parameters*/
 #define COLS		80
@@ -29,22 +30,28 @@ static float sdlZoom = 1.0;
 static unsigned char *screen;
 static int changed;
 
-int serial_send (byte_t c)
+int con_put_char (byte_t c)
 	{
 	sdl_textout(c);
 	return 0;
 	}
 
 
-int serial_recv (byte_t * c)
+int con_pos_set (byte_t row, byte_t col)
+	{
+	// FIXME: no cursor position control with SDL ?
+	return 0;
+	}
+
+
+int con_get_key (word_t * k)
 	{
 	MWKEY mwkey;
-	MWKEYMOD mwkeymod;
 	MWSCANCODE scancode;
 	int ret;
 
-	*c = 0;
-	ret = sdl_readkbd(&mwkey, &mwkeymod, &scancode);
+	*k = 0;
+	ret = sdl_readkbd(&mwkey, &scancode);
 	if (ret == KBD_QUIT) {
 		sdl_close();
 		exit(0);
@@ -59,44 +66,31 @@ printf("KBD: %x\n", mwkey);
 		return 0;
 	}
 
-	*c = (byte_t)mwkey;
-	if (*c == 0x7f) *c = '\b';	// convert DEL to BS
+	*k = (word_t)mwkey;
+	if (*k == 0x7f) *k = '\b';	// convert DEL to BS
 
 	return 0;
 	}
 
 
-int serial_poll ()
+int con_poll_key ()
 	{
 	if (changed) sdl_draw(0, 0, 0, 0);
 	return sdl_pollkbd();
 	}
 
-void serial_raw ()
+void con_raw ()
 	{
 	}
 
 
-void serial_normal ()
+void con_normal ()
 	{
-	}
-
-
-void serial_init ()
-	{
-	sdl_init ();
-	//serial_dev_init ();
-	}
-
-
-void serial_term ()
-	{
-	sdl_close ();
 	}
 
 
 /* init SDL subsystem, return < 0 on error*/
-int sdl_init(void)
+int con_init(void)
 {
 	int	pixelformat;
 
@@ -174,7 +168,7 @@ int sdl_pollevents(void)
 	return 0;
 }
 
-void sdl_close(void)
+void con_term (void)
 {
 	free(screen);
 	SDL_Quit();
@@ -420,9 +414,9 @@ fnkey_convert(int key)
  * Returns KBD_NODATA, KBD_QUIT, KBD_KEYPRESS or KBD_KEYRELEASE
  * This is a non-blocking call.
  */
-int sdl_readkbd(MWKEY *kbuf, MWKEYMOD *modifiers, MWSCANCODE *scancode)
+int sdl_readkbd(MWKEY *kbuf, MWSCANCODE *scancode)
 {
-	int mwkey, m;
+	int mwkey;
 	SDL_Scancode sc;
 	SDL_Keymod mod;
 	SDL_Event event;
@@ -435,19 +429,26 @@ int sdl_readkbd(MWKEY *kbuf, MWKEYMOD *modifiers, MWSCANCODE *scancode)
 			sc = event.key.keysym.scancode;
 			mwkey = event.key.keysym.sym;
 			mod = SDL_GetModState();
-//printf("key %x,%x %x = %x\n", mwkey, sc, mod, SDL_GetKeyFromScancode(sc));
-			m = 0;
+
+			//printf("key %x,%x %x = %x\n", mwkey, sc, mod, SDL_GetKeyFromScancode(sc));
+
+			// Invariant QWERTY code mapping
+			// whatever the keyboard layout
+
+			switch (sc)
+				{
+				case SDL_SCANCODE_MINUS:  mwkey = '-'; break;
+				case SDL_SCANCODE_PERIOD: mwkey = '.'; break;
+				case SDL_SCANCODE_SLASH:  mwkey = '/'; break;
+				default: break;
+				}
+
 			if (mwkey < 256 && (mod & (KMOD_SHIFT|KMOD_CAPS))) {
-				m |= MWKMOD_SHIFT;
 				mwkey = shift_convert(mwkey);
 			}
 			if (mwkey < 256 && (mod & KMOD_CTRL)) {
-				m |= MWKMOD_CTRL;
 				mwkey &= 0x1f;			/* convert to control char*/
 			}
-			if (mod & KMOD_ALT)
-				m |= MWKMOD_ALT;
-			*modifiers = m;
 
 			if (mwkey >= 128) {			/* convert function key from SDL To MW*/
 				mwkey = fnkey_convert(mwkey);

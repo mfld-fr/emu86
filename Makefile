@@ -1,8 +1,8 @@
 # EMU86 main makefile
 
 PLATFORM=terminal
-#PLATFORM=sdl
 #PLATFORM=emscripten
+
 CFLAGS = -g -Wall
 PREFIX = /usr/local
 
@@ -14,20 +14,24 @@ ifeq ($(PLATFORM), emscripten)
 CC = emcc -s ASYNCIFY -O3 --emrun -s USE_SDL=2 -DSDL=1
 #CC = emcc -s ASYNCIFY -O2 --emrun -s USE_SDL=2 -DSDL=1 --closure 1 -flto
 CFLAGS =
-PRELOAD = --preload-file=../elks-gh/elks/arch/i86/boot/Image@Image \
+LDLIBS = --preload-file=../elks-gh/elks/arch/i86/boot/Image@Image \
           --preload-file=../elks-gh/image/romfs.bin@romfs.bin
 EMU86_PROG = emu86.html
 endif
 
 EMU86_HDRS = \
-	op-common.h \
+	emu-types.h \
+	op-id.h \
 	op-id-name.h \
+	op-common.h \
 	op-class.h \
 	emu-mem-io.h \
 	emu-proc.h \
 	emu-int.h \
 	emu-timer.h \
 	emu-serial.h \
+	emu-char.h \
+	emu-con.h \
 	op-exec.h \
 	# end of list
 
@@ -52,26 +56,60 @@ STYLE=att
 
 EMU86_OBJS += op-print-$(STYLE).o
 
-# Serial emulation
-# console = connected to EMU86 stdin & stdout
-# pty = connected to PTY (created by EMU86 as master)
-# sdl = emscripten SDL2 port
+# Console backend
+# none:  no console backend
+# stdio: character console - EMU86 stdin & stdout
+# pty:   character console - PTY (created by EMU86 as master)
+# sdl:   graphical console - SDL window
 
-SERIAL=console
+#CONSOLE=none
+CONSOLE=stdio
+#CONSOLE=pty
+#CONSOLE=sdl
+
+# Force console to SDL for emscripten
+
+ifeq ($(PLATFORM), emscripten)
+CONSOLE=sdl
+endif
+
+ifeq ($(CONSOLE), none)
+	EMU86_OBJS += con-none.o
+endif
+
+ifeq ($(CONSOLE), stdio)
+	EMU86_OBJS += con-char.o char-stdio.o
+endif
+
+ifeq ($(CONSOLE), pty)
+	EMU86_OBJS += con-char.o char-pty.o
+endif
+
+ifeq ($(CONSOLE), sdl)
+	EMU86_OBJS += con-sdl.o rom8x16.o
+	CFLAGS += -DSDL=1
+	LDLIBS += -lSDL2
+endif
+
+# Serial backend
+# none:  no serial backend
+# stdio: EMU86 stdin & stdout
+# pty:   PTY (created by EMU86 as master)
+
+# WARNING: cannot use stdio or pty backend if any already used by console
+
+SERIAL=none
+#SERIAL=stdio
 #SERIAL=pty
 
-ifeq ($(PLATFORM), sdl)
-SERIAL=sdl
-EMU86_OBJS += rom8x16.o
-CFLAGS += -DSDL=1
-PRELOAD = -lSDL2
-endif
-ifeq ($(PLATFORM), emscripten)
-SERIAL=sdl
-EMU86_OBJS += rom8x16.o
+ifeq ($(SERIAL), stdio)
+	EMU86_OBJS += serial-char.o char-stdio.o
 endif
 
-EMU86_OBJS += serial-$(SERIAL).o
+ifeq ($(SERIAL), pty)
+	EMU86_OBJS += serial-char.o char-pty.o
+endif
+
 
 # Target selection
 # elks = minimal PC to run ELKS
@@ -79,6 +117,7 @@ EMU86_OBJS += serial-$(SERIAL).o
 
 TARGET=elks
 #TARGET=advtech
+
 ifeq ($(TARGET), elks)
 CFLAGS += -DELKS
 endif
@@ -114,7 +153,7 @@ clean:
 $(EMU86_OBJS): $(EMU86_HDRS)
 
 $(EMU86_PROG): $(EMU86_OBJS)
-	$(CC) -o $(EMU86_PROG) $(EMU86_OBJS) $(PRELOAD)
+	$(CC) -o $(EMU86_PROG) $(EMU86_OBJS) $(LDLIBS)
 
 $(PCAT_PROG): $(PCAT_OBJS)
 	$(CC) -o $(PCAT_PROG) $(PCAT_OBJS)

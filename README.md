@@ -40,7 +40,7 @@ test automation,
 
 * or directly to the emulator console (standard input / output).
 
-A good reference is the "8086tiny" project.
+A good reference is the '8086tiny' project : https://github.com/adriancable/8086tiny
 
 
 CURRENT STATUS:

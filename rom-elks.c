@@ -11,7 +11,7 @@
 
 #include "emu-mem-io.h"
 #include "emu-proc.h"
-#include "emu-serial.h"
+#include "emu-con.h"
 #include "emu-int.h"
 
 extern int info_level;
@@ -19,14 +19,13 @@ extern int info_level;
 
 // BIOS video services
 
-static byte_t col_prev = 0;
-
 static byte_t num_hex (byte_t n)
 	{
 	byte_t h = n + '0';
 	if (h > '9') h += 'A' - '9';
 	return h;
 	}
+
 
 static int int_10h ()
 	{
@@ -39,22 +38,17 @@ static int int_10h ()
 	word_t cx;
 
 	addr_t a;
-	byte_t c;
+	byte_t r;  // row
+	byte_t c;  // column
 
 	switch (ah)
 		{
 		// Set cursor position
-		// Detect new line as return to first column
 
 		case 0x02:
-			c = reg8_get (REG_DL); // column
-			if (c == 0 && col_prev != 0)
-				{
-				//serial_send (13);  // CR
-				serial_send (10);  // LF
-				}
-
-			col_prev = c;
+			r = reg8_get (REG_DH);  // row
+			c = reg8_get (REG_DL);  // column
+			con_pos_set (r,c);
 			break;
 
 		// Get cursor position
@@ -78,14 +72,14 @@ static int int_10h ()
 
 		case 0x09:
 		case 0x0A:
-			serial_send (reg8_get (REG_AL));  // Redirect to serial port
+			con_put_char (reg8_get (REG_AL));
 			break;
 
 		// Write as teletype to current page
 		// Page ignored in video mode 7
 
 		case 0x0E:
-			serial_send (reg8_get (REG_AL));  // Redirect to serial port
+			con_put_char (reg8_get (REG_AL));
 			break;
 
 		// Get video mode
@@ -123,7 +117,7 @@ static int int_10h ()
 
 			while (cx--)
 				{
-				serial_send (mem_read_byte (a++));  // Redirect to serial port
+				con_put_char (mem_read_byte (a++));
 				}
 
 			break;
@@ -133,13 +127,13 @@ static int int_10h ()
 		case 0x1D:
 			al = reg8_get (REG_AL);
 			c = num_hex (al >> 4);
-			serial_send (c);  // Redirect to serial port
+			con_put_char (c);
 			c = num_hex (al & 0x0F);
-			serial_send (c);  // Redirect to serial port
+			con_put_char (c);
 			break;
 
 		default:
-	notimp:
+		notimp:
 			fflush(stdout);
 			printf ("fatal: INT 10h: AH=%hxh not implemented\n", ah);
 			assert (0);
@@ -399,12 +393,13 @@ static int int_15h ()
 
 // BIOS keyboard services
 
-static byte_t key_prev = 0;
+static word_t key_prev = 0;
 
 static int int_16h ()
 	{
 	int err = 0;
-	byte_t c = 0;
+
+	word_t k = 0;
 
 	byte_t ah = reg8_get (REG_AH);
 	switch (ah)
@@ -414,15 +409,15 @@ static int int_16h ()
 		case 0x00:
 			if (key_prev)
 				{
-				reg8_set (REG_AL, key_prev);
+				reg8_set (REG_AL, (byte_t) key_prev);
 				key_prev = 0;
 				}
 			else
 				{
-				err = serial_recv (&c);
+				err = con_get_key (&k);
 				if (err) break;
 
-				reg8_set (REG_AL, (byte_t) c);  // ASCII code
+				reg8_set (REG_AL, (byte_t) k);  // ASCII code
 				}
 
 			reg8_set (REG_AH, 0);  // No scan code
@@ -431,18 +426,18 @@ static int int_16h ()
 		// Peek character
 
 		case 0x01:
-			if (serial_poll ())
+			if (con_poll_key ())
 				{
 				flag_set (FLAG_ZF, 0);
-				err = serial_recv (&key_prev);
+				err = con_get_key (&key_prev);
 				if (err) break;
 
-				reg8_set (REG_AL, key_prev);
+				reg8_set (REG_AL, (byte_t) key_prev);
 				reg8_set (REG_AH, 0);
 				}
 			else
 				{
-				flag_set (FLAG_ZF, 1);  // no character in buffer
+				flag_set (FLAG_ZF, 1);  // no character in queue
 				}
 
 			break;
@@ -455,10 +450,10 @@ static int int_16h ()
 		// Extended keyboard read
 
 		case 0x10:
-			err = serial_recv (&c);
+			err = con_get_key (&k);
 			if (err) break;
 
-			reg8_set (REG_AL, (byte_t) c);  // ASCII code
+			reg8_set (REG_AL, (byte_t) k);  // ASCII code
 			reg8_set (REG_AH, 0);           // No scan code
 			break;
 

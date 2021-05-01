@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include "op-common.h"
+#include "emu-types.h"
 
 // Generic interrupt controller
 
