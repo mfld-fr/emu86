@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include "op-common.h"
+#include "emu-types.h"
 
 // Generic interrupt controller
 
@@ -49,3 +49,5 @@ int int_hand (byte_t i);
 
 void int_init (void);
 
+// TODO: move to rom-xxx
+void rom_init (void);

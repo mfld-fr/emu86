@@ -9,19 +9,18 @@
 #include <signal.h>
 #include <sys/ioctl.h>
 
-#include "emu-serial.h"
+#include "emu-char.h"
 
 static struct termios def_termios;
 
-int serial_send (byte_t c)
+int char_send (byte_t c)
 	{
 	int err = 0;
 
-	//if (c == '\n') serial_send ('\r');	// may be needed for Linux terminal
 	int n = write (1, &c, 1);
 	if (n != 1)
 		{
-		perror ("warning: cannot write to console");
+		perror ("warning: cannot write to stdio");
 		err = -1;
 		}
 
@@ -29,11 +28,11 @@ int serial_send (byte_t c)
 	}
 
 
-int serial_recv (byte_t * c)
+int char_recv (byte_t * c)
 	{
 	int err = 0;
 
-	if (!serial_poll())
+	if (!char_poll())
 		{
 		fd_set fdsr;
 		FD_ZERO (&fdsr);
@@ -57,7 +56,7 @@ int serial_recv (byte_t * c)
 	}
 
 
-int serial_poll ()
+int char_poll ()
 	{
 	fd_set fdsr;
 	FD_ZERO (&fdsr);
@@ -70,7 +69,7 @@ int serial_poll ()
 	}
 
 
-void serial_catch ()
+void catch_int ()
 {
 	extern int flag_prompt;
 
@@ -78,7 +77,7 @@ void serial_catch ()
 }
 
 
-void serial_raw ()
+void char_raw ()
 	{
 	struct termios termios;
 	fflush(stdout);
@@ -93,7 +92,7 @@ void serial_raw ()
 	}
 
 
-void serial_normal ()
+void char_normal ()
 	{
 	int nonblock = 0;
 	fflush(stdout);
@@ -108,7 +107,7 @@ static void catch_abort(int sig)
 	}
 
 
-void serial_init ()
+int char_init ()
 	{
 #ifdef __APPLE__
 	static char buf[1];
@@ -116,19 +115,18 @@ void serial_init ()
 #endif
 	tcgetattr(0, &def_termios);
 
-	signal(SIGINT, serial_catch);
+	signal(SIGINT, catch_int);
 	siginterrupt(SIGINT, 0);
-	serial_raw();
+	char_raw();
 
 	signal(SIGABRT, catch_abort);
-	atexit(serial_term);
-
-	serial_dev_init ();
+	atexit(char_term);
+	return 0;
 	}
 
 
-void serial_term ()
+void char_term ()
 	{
-	if (def_termios.c_oflag) serial_normal();
+	if (def_termios.c_oflag) char_normal();
 	}
 

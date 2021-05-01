@@ -8,6 +8,7 @@
 
 #include "op-id.h"
 #include "op-id-name.h"
+#include "op-common.h"
 #include "op-class.h"
 
 

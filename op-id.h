@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include "op-common.h"
-
 // Operation identifiers
 
 #define OP_NULL     0xFFFF

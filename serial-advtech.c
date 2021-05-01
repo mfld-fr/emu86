@@ -140,3 +140,7 @@ void serial_dev_init ()
 	serial_regs [SERIAL_REG_STATUS] = SERIAL_STATUS_TEMT | SERIAL_STATUS_THRE;
 	}
 
+void serial_dev_term ()
+	{
+	}
+

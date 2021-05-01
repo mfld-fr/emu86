@@ -1,16 +1,8 @@
-// LIB86 - 80x86 library
-// Common types and helpers
+// EMU86 - Common helpers
 
 #pragma once
 
-
-// Basic types
-
-typedef unsigned char  byte_t;
-typedef unsigned short word_t;
-typedef unsigned long  addr_t;
-typedef unsigned long  dword_t;
-
+#include "emu-types.h"
 
 // Output helpers
 

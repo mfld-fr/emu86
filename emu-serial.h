@@ -1,23 +1,26 @@
+//------------------------------------------------------------------------------
+// EMU86 - Generic serial port
+//------------------------------------------------------------------------------
 
 #pragma once
 
-#include "op-common.h"
+#include "emu-types.h"
 
-// Serial device
+// Virtual device
 
 int serial_proc ();
 
 void serial_dev_init ();
+void serial_dev_term ();
 
-// Serial backend
+// Backend
 
 int serial_send (byte_t c);
 int serial_recv (byte_t * c);
 
 int serial_poll ();
 
-void serial_raw ();
-void serial_normal ();
+// Subsystem
 
-void serial_init ();
+int serial_init ();
 void serial_term ();

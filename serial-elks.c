@@ -10,3 +10,6 @@ void serial_dev_init ()
 	{
 	}
 
+void serial_dev_term ()
+	{
+	}
