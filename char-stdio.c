@@ -71,9 +71,9 @@ int char_poll ()
 
 void catch_int ()
 {
-	extern int flag_prompt;
-
-	flag_prompt = 1;
+	extern int _flag_prompt;
+	// FIXME: SIGINT should be hooked in main()
+	_flag_prompt = 1;
 }
 
 
