@@ -53,7 +53,7 @@ int con_get_key (word_t * k)
 	*k = 0;
 	ret = sdl_readkbd(&mwkey, &scancode);
 	if (ret == KBD_QUIT) {
-		sdl_close();
+		con_term();
 		exit(0);
 	}
 

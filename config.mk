@@ -1,11 +1,11 @@
 # EMU86 configuration
 
 # Target selection
-# elks = minimal PC to run ELKS
-# advtech = Advantech SNMP-1000 SBC
+# elks:    minimal PC to run ELKS
+# advtech: Advantech SNMP-1000 SBC
 
-#TARGET=elks
-TARGET=advtech
+TARGET=elks
+#TARGET=advtech
 
 # Platform selection
 # terminal:   standard 
@@ -22,8 +22,8 @@ PLATFORM=terminal
 
 # NOTE: console is forced to SDL for emscripten
 
-CONSOLE=none
-#CONSOLE=stdio
+#CONSOLE=none
+CONSOLE=stdio
 #CONSOLE=pty
 #CONSOLE=sdl
 
@@ -34,13 +34,13 @@ CONSOLE=none
 
 # WARNING: cannot use stdio or pty backend if any already used by console
 
-#SERIAL=none
+SERIAL=none
 #SERIAL=stdio
-SERIAL=pty
+#SERIAL=pty
 
 # Disassembly style
 # att = AT&T syntax (GNU default)
 # intel = Intel syntax
 
-#STYLE=att
-STYLE=intel
+STYLE=att
+#STYLE=intel
