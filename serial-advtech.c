@@ -132,11 +132,15 @@ int serial_io_write (word_t p, word_t  w)
 
 // Serial device initialization
 
-void serial_init ()
+void serial_dev_init ()
 	{
 	// Initialize registers
 
 	serial_regs [SERIAL_REG_CONTROL] = SERIAL_CONTROL_RXIE;
 	serial_regs [SERIAL_REG_STATUS] = SERIAL_STATUS_TEMT | SERIAL_STATUS_THRE;
+	}
+
+void serial_dev_term ()
+	{
 	}
 

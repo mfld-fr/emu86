@@ -1,7 +1,6 @@
 # EMU86 main makefile
 
-PLATFORM=terminal
-#PLATFORM=emscripten
+include config.mk
 
 CFLAGS = -g -Wall
 PREFIX = /usr/local
@@ -27,12 +26,12 @@ EMU86_HDRS = \
 	op-class.h \
 	emu-mem-io.h \
 	emu-proc.h \
+	op-exec.h \
 	emu-int.h \
 	emu-timer.h \
 	emu-serial.h \
-	emu-char.h \
 	emu-con.h \
-	op-exec.h \
+	emu-char.h \
 	# end of list
 
 EMU86_OBJS = \
@@ -41,37 +40,22 @@ EMU86_OBJS = \
 	op-class.o \
 	emu-mem-io.o \
 	emu-proc.o \
-	emu-int.o \
-	emu-serial.o \
 	op-exec.o \
+	emu-int.o \
 	emu-main.o \
 	# end of list
 
-# Disassembly style
-# att = AT&T syntax (GNU default)
-# intel = Intel syntax
-
-STYLE=att
-#STYLE=intel
-
 EMU86_OBJS += op-print-$(STYLE).o
 
-# Console backend
-# none:  no console backend
-# stdio: character console - EMU86 stdin & stdout
-# pty:   character console - PTY (created by EMU86 as master)
-# sdl:   graphical console - SDL window
-
-#CONSOLE=none
-CONSOLE=stdio
-#CONSOLE=pty
-#CONSOLE=sdl
 
 # Force console to SDL for emscripten
 
 ifeq ($(PLATFORM), emscripten)
-CONSOLE=sdl
+	CONSOLE=sdl
 endif
+
+
+# Console backend
 
 ifeq ($(CONSOLE), none)
 	EMU86_OBJS += con-none.o
@@ -91,16 +75,12 @@ ifeq ($(CONSOLE), sdl)
 	LDLIBS += -lSDL2
 endif
 
+
 # Serial backend
-# none:  no serial backend
-# stdio: EMU86 stdin & stdout
-# pty:   PTY (created by EMU86 as master)
 
-# WARNING: cannot use stdio or pty backend if any already used by console
-
-SERIAL=none
-#SERIAL=stdio
-#SERIAL=pty
+ifeq ($(SERIAL), none)
+	EMU86_OBJS += serial-none.o
+endif
 
 ifeq ($(SERIAL), stdio)
 	EMU86_OBJS += serial-char.o char-stdio.o
@@ -112,11 +92,6 @@ endif
 
 
 # Target selection
-# elks = minimal PC to run ELKS
-# advtech = Advantech SNMP-1000 SBC
-
-TARGET=elks
-#TARGET=advtech
 
 ifeq ($(TARGET), elks)
 CFLAGS += -DELKS
@@ -130,11 +105,13 @@ EMU86_OBJS += \
 	rom-$(TARGET).o \
 	# end of list
 
+
 # PCAT utility for EMU86 serial port
 
 PCAT_PROG = pcat
 
 PCAT_OBJS = pcat-main.o
+
 
 # Rules
 
@@ -147,7 +124,7 @@ install: $(EMU86_PROG) $(PCAT_PROG)
 	install -m 755 -s $(PCAT_PROG) $(PREFIX)/bin/$(PCAT_PROG)
 
 clean:
-	rm -f $(EMU86_OBJS) $(EMU86_PROG) $(PCAT_OBJS) $(PCAT_PROG)
+	rm -f *.o $(EMU86_PROG) $(PCAT_PROG) emu86.pts
 	rm -f emu86.html emu86.js emu86.wasm emu86.data pcat.html pcat.wasm
 
 $(EMU86_OBJS): $(EMU86_HDRS)

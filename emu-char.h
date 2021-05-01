@@ -2,6 +2,8 @@
 // EMU86 - Generic character backend
 //-------------------------------------------------------------------------------
 
+#pragma once
+
 #include "emu-types.h"
 
 int char_send (byte_t c);

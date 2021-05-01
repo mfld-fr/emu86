@@ -135,7 +135,7 @@ static int int_D2h ()
 // Interrupt handler table
 
 int_num_hand_t _int_tab [] = {
-	{ 0x03, int_03h },
+//	{ 0x03, int_03h },
 	{ 0x1A, int_1Ah },
 	{ 0x60, int_60h },
 	{ 0xD0, int_D0h },
