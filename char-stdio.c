@@ -83,8 +83,8 @@ void char_raw ()
 	fflush(stdout);
 	tcgetattr(0, &termios);
 	termios.c_iflag &= ~(ICRNL|IGNCR|INLCR);
-	//termios.c_oflag &= ~(OPOST);
 	termios.c_lflag &= ~(ECHO|ECHOE|ECHONL|ICANON);
+	termios.c_lflag |= ISIG;
 	tcsetattr(0, TCSADRAIN, &termios);
 
 	int nonblock = 1;

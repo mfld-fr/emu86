@@ -255,7 +255,7 @@ int image_load (char * path)
 void image_close (void)
 		{
 		struct diskinfo *dp;
-		for (dp = diskinfo; dp <= &diskinfo[sizeof(diskinfo)/sizeof(diskinfo[0])]; dp++)
+		for (dp = diskinfo; dp < &diskinfo[sizeof(diskinfo)/sizeof(diskinfo[0])]; dp++)
 			{
 			if (dp->fd != -1)
 				close (dp->fd);
