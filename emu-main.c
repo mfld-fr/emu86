@@ -25,11 +25,6 @@
 #include <emscripten.h>
 #define MAINLOOP_TIMER 2000
 int mainloop_count = 0;
-#define INST_TIMER	1500
-#elif SDL
-#define INST_TIMER	3000
-#else
-#define INST_TIMER	20000
 #endif
 
 extern int image_load (char * path);
