@@ -72,6 +72,13 @@ Two default configurations are provided for convenience:
 
 Then run `make clean` and `make` as usual.
 
+To build and run browser version (requires ELKS):
+* Goto https://emscripten.org/docs/getting_started/downloads.html to download and install Emscripten SDK.
+* Change PLATFORM=emscripten in config.mk
+* `source ~/emsdk/emsdk_env.sh`
+* `make`
+* `emrun --serve_after_close emu86.html`
+
 
 ## TO DO LIST
 
