@@ -1,5 +1,8 @@
 /*
- * EMU86 Serial Console for Emscripten using SDL2
+ * EMU86 SDL2 Console
+ *	Supports ELKS Headless Console (streaming data)
+ *	Supports ELKS BIOS Console (BIOS cursor, scroll etc)
+ *	Also used by Emscripten platform for emulator console output in browser
  *
  * Dec 2020 Greg Haerr <greg@censoft.com>
  */
@@ -29,6 +32,12 @@ static SDL_Texture *sdlTexture;
 static float sdlZoom = 1.0;
 static unsigned char *screen;
 static int changed;
+static int curx, cury;
+
+static void sdl_drawbitmap(unsigned char c, int x, int y);
+static void cursoron(void);
+static void cursoroff(void);
+static void scrollup(void);
 
 int con_put_char (byte_t c)
 	{
@@ -39,7 +48,30 @@ int con_put_char (byte_t c)
 
 int con_pos_set (byte_t row, byte_t col)
 	{
-	// FIXME: no cursor position control with SDL ?
+	if (curx != col || cury != row)
+		{
+		cursoroff();
+		cury = row;
+		curx = col;
+		cursoron();
+		}
+	return 0;
+	}
+
+
+int con_pos_get (byte_t *row, byte_t *col)
+	{
+	*row = cury;
+	*col = curx;
+	return 0;
+	}
+
+
+int con_scrollup ()
+	{
+	cursoroff();
+	scrollup();
+	cursoron();
 	return 0;
 	}
 
@@ -183,6 +215,7 @@ void sdl_draw(int x, int y, int width, int height)
 	r.w = width? width: WIDTH;
 	r.h = height? height: HEIGHT;
 
+printf("DRAW\n");
 	unsigned char *pixels = screen + y * PITCH + x * (BPP >> 3);
 	SDL_UpdateTexture(sdlTexture, &r, pixels, PITCH);
 
@@ -233,16 +266,40 @@ static void sdl_drawbitmap(unsigned char c, int x, int y)
     }
 }
 
+static void cursoron(void)
+{
+	/* no simulated cursor in first column because of CR issue*/
+	if (curx != 0)
+	{
+		sdl_drawbitmap('_', curx * CHAR_WIDTH, cury * CHAR_HEIGHT);
+		//sdl_draw(curx * CHAR_WIDTH, cury * CHAR_HEIGHT, CHAR_WIDTH, CHAR_HEIGHT);
+		changed = 1;
+	}
+}
+
+static void cursoroff(void)
+{
+	if (curx != 0)
+	{
+		sdl_drawbitmap(' ', curx * CHAR_WIDTH, cury * CHAR_HEIGHT);
+		//sdl_draw(curx * CHAR_WIDTH, cury * CHAR_HEIGHT, CHAR_WIDTH, CHAR_HEIGHT);
+		changed = 1;
+	}
+}
+
+static void scrollup(void)
+{
+	memcpy(screen, screen + CHAR_HEIGHT * PITCH, (LINES-1) * CHAR_HEIGHT * PITCH);
+	memset(screen + (LINES-1) * CHAR_HEIGHT * PITCH, 0, CHAR_HEIGHT * PITCH);
+	//sdl_draw(0, 0, WIDTH, HEIGHT);
+	changed = 1;
+}
+
 /* output character at cursor location*/
 void sdl_textout(unsigned char c)
 {
-	static int curx, cury;
-
 	changed = 1;
-	if (curx != 0) {	/* no simulated cursor in first column because of CR issue*/
-		sdl_drawbitmap(' ', curx * CHAR_WIDTH, cury * CHAR_HEIGHT);
-		//sdl_draw(curx * CHAR_WIDTH, cury * CHAR_HEIGHT, CHAR_WIDTH, CHAR_HEIGHT);
-	}
+	cursoroff();
 
 	switch (c) {
 	case '\0':	return;
@@ -258,18 +315,13 @@ void sdl_textout(unsigned char c)
 		curx = 0;
 scroll:
 		if (++cury >= LINES) {
-			memcpy(screen, screen + CHAR_HEIGHT * PITCH, (LINES-1) * CHAR_HEIGHT * PITCH);
-			memset(screen + (LINES-1) * CHAR_HEIGHT * PITCH, 0, CHAR_HEIGHT * PITCH);
+			scrollup();
 			cury = LINES - 1;
-			//sdl_draw(0, 0, WIDTH, HEIGHT);
 		}
 	}
 
 update:
-	if (curx != 0) {
-		sdl_drawbitmap('_', curx * CHAR_WIDTH, cury * CHAR_HEIGHT);
-		//sdl_draw(curx * CHAR_WIDTH, cury * CHAR_HEIGHT, CHAR_WIDTH, CHAR_HEIGHT);
-	}
+	cursoron();
 }
 
 /* keyboard handling*/

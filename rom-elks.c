@@ -41,6 +41,7 @@ static int int_10h ()
 	byte_t r;  // row
 	byte_t c;  // column
 
+//printf("INT 10h fn %x\n", ah);
 	switch (ah)
 		{
 		// Set cursor position
@@ -54,8 +55,9 @@ static int int_10h ()
 		// Get cursor position
 
 		case 0x03:
+			con_pos_get(&r, &c);
+			reg16_set (REG_DX, (r << 8) | c);
 			reg16_set (REG_CX, 0);  // null cursor
-			reg16_set (REG_DX, 0);  // upper-left corner (0,0)
 			break;
 
 		// Select active page
@@ -66,6 +68,7 @@ static int int_10h ()
 		// Scroll up
 
 		case 0x06:
+			con_scrollup();			// ignores row/col numbers
 			break;
 
 		// Write character at current cursor position
@@ -79,6 +82,7 @@ static int int_10h ()
 		// Page ignored in video mode 7
 
 		case 0x0E:
+printf("%c", reg8_get(REG_AL));
 			con_put_char (reg8_get (REG_AL));
 			break;
 

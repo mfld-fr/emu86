@@ -12,7 +12,7 @@ TARGET=elks
 # emscripten: run in web browser
 
 PLATFORM=terminal
-#PLATFORM=emscripten
+PLATFORM=emscripten
 
 # Console backend
 # none:  no console backend
