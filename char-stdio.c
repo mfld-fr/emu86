@@ -103,6 +103,7 @@ void char_normal ()
 
 static void catch_abort(int sig)
 	{
+	char_term();
 	exit(1);
 	}
 
@@ -120,7 +121,6 @@ int char_init ()
 	char_raw();
 
 	signal(SIGABRT, catch_abort);
-	atexit(char_term);
 	return 0;
 	}
 
@@ -129,4 +129,3 @@ void char_term ()
 	{
 	if (def_termios.c_oflag) char_normal();
 	}
-

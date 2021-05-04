@@ -9,7 +9,7 @@
 
 #define TIMER_MAX 3000
 
-int timer_enabled = 0;
+static int timer_enabled = 0;
 static int timer_count = 0;
 
 void timer_proc ()

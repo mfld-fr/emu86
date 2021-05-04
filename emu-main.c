@@ -27,9 +27,6 @@
 #define MAINLOOP_TIMER 10000
 static int mainloop_count = 0;
 
-extern int image_load (char * path);
-extern void image_close (void);
-
 static int file_load (addr_t start, char * path)
 	{
 	int err = -1;
@@ -601,10 +598,7 @@ int main (int argc, char * argv [])
 	con_term ();
 	serial_term ();
 
-	// Asked by @ghaerr in https://github.com/mfld-fr/emu86/pull/37#issuecomment-830708810
-	// Because there are still some exit() in the code path
-	//return (err >= 0) ? EXIT_SUCCESS : EXIT_FAILURE;
-	_exit ((err >= 0) ? EXIT_SUCCESS : EXIT_FAILURE);
+	return (err >= 0) ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 
 //------------------------------------------------------------------------------
