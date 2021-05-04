@@ -82,7 +82,6 @@ static int int_10h ()
 		// Page ignored in video mode 7
 
 		case 0x0E:
-//printf("%c", reg8_get(REG_AL));
 			con_put_char (reg8_get (REG_AL));
 			break;
 

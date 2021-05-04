@@ -231,7 +231,6 @@ void sdl_draw(int x, int y, int width, int height)
 	r.w = width? width: WIDTH;
 	r.h = height? height: HEIGHT;
 
-printf("DRAW\n");
 	unsigned char *pixels = screen + y * PITCH + x * (BPP >> 3);
 	SDL_UpdateTexture(sdlTexture, &r, pixels, PITCH);
 

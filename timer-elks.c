@@ -9,12 +9,12 @@
 
 #define TIMER_MAX 3000
 
+int timer_enabled = 0;
 static int timer_count = 0;
 
 void timer_proc ()
 	{
-	timer_count++;
-	if (timer_count >= TIMER_MAX)
+	if (timer_enabled && ++timer_count >= TIMER_MAX)
 		{
 		int_line_set (INT_LINE_TIMER, 1);
 		timer_count = 0;
