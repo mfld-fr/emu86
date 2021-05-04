@@ -1,5 +1,8 @@
 /*
- * EMU86 Serial Console for Emscripten using SDL2
+ * EMU86 SDL2 Console
+ *	Supports ELKS Headless Console (streaming data)
+ *	Supports ELKS BIOS Console (BIOS cursor, scroll etc)
+ *	Also used by Emscripten platform for emulator console output in browser
  *
  * Dec 2020 Greg Haerr <greg@censoft.com>
  */
@@ -23,12 +26,27 @@ extern MWIMAGEBITS rom8x16_bits[];
 #define HEIGHT		(LINES * CHAR_HEIGHT)
 #define PITCH		(WIDTH * (BPP >> 3))
 
+/* event types*/
+#define EVENT_NONE	0
+#define EVENT_MOUSE	1
+#define EVENT_KBD	2
+#define EVENT_QUIT	3
+
 static SDL_Window *sdlWindow;
 static SDL_Renderer *sdlRenderer;
 static SDL_Texture *sdlTexture;
 static float sdlZoom = 1.0;
 static unsigned char *screen;
 static int changed;
+static int curx, cury;
+
+int sdl_pollevents(void);
+int sdl_pollkbd(void);
+
+static void sdl_drawbitmap(unsigned char c, int x, int y);
+static void cursoron(void);
+static void cursoroff(void);
+static void scrollup(void);
 
 int con_put_char (byte_t c)
 	{
@@ -39,7 +57,30 @@ int con_put_char (byte_t c)
 
 int con_pos_set (byte_t row, byte_t col)
 	{
-	// FIXME: no cursor position control with SDL ?
+	if (curx != col || cury != row)
+		{
+		cursoroff();
+		cury = row;
+		curx = col;
+		cursoron();
+		}
+	return 0;
+	}
+
+
+int con_pos_get (byte_t *row, byte_t *col)
+	{
+	*row = cury;
+	*col = curx;
+	return 0;
+	}
+
+
+int con_scrollup ()
+	{
+	cursoroff();
+	scrollup();
+	cursoron();
 	return 0;
 	}
 
@@ -73,11 +114,18 @@ printf("KBD: %x\n", mwkey);
 	}
 
 
-int con_poll_key ()
+int con_update ()
 	{
 	if (changed) sdl_draw(0, 0, 0, 0);
+	return sdl_pollevents() == EVENT_QUIT;	// return 1 to terminate
+	}
+
+
+int con_poll_key ()
+	{
 	return sdl_pollkbd();
 	}
+
 
 void con_raw ()
 	{
@@ -148,16 +196,16 @@ int sdl_pollevents(void)
   	if (SDL_PeepEvents(&event, 1, SDL_PEEKEVENT, SDL_FIRSTEVENT, SDL_LASTEVENT)) {
 #if 0
 		if (event.type >= SDL_MOUSEMOTION && event.type <= SDL_MOUSEWHEEL)
-			return 1;
+			return EVENT_MOUSE;
 		if (event.type >= SDL_FINGERDOWN && event.type <= SDL_FINGERMOTION)
-			return 1;
+			return EVENT_MOUSE;
 		if (event.type >= SDL_KEYDOWN && event.type <= SDL_TEXTINPUT)
-			return 2;
+			return EVENT_KBD;
 #endif
 		if (event.type == SDL_KEYDOWN)
-			return 2;
+			return EVENT_KBD;
 		if (event.type == SDL_QUIT)
-			return 3;
+			return EVENT_QUIT;
 
 		/* dump event*/
   		SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_FIRSTEVENT, SDL_LASTEVENT);
@@ -165,7 +213,7 @@ int sdl_pollevents(void)
 	}
 	SDL_PumpEvents();
 
-	return 0;
+	return EVENT_NONE;
 }
 
 void con_term (void)
@@ -233,16 +281,40 @@ static void sdl_drawbitmap(unsigned char c, int x, int y)
     }
 }
 
+static void cursoron(void)
+{
+	/* no simulated cursor in first column because of CR issue*/
+	if (curx != 0)
+	{
+		sdl_drawbitmap('_', curx * CHAR_WIDTH, cury * CHAR_HEIGHT);
+		//sdl_draw(curx * CHAR_WIDTH, cury * CHAR_HEIGHT, CHAR_WIDTH, CHAR_HEIGHT);
+		changed = 1;
+	}
+}
+
+static void cursoroff(void)
+{
+	if (curx != 0)
+	{
+		sdl_drawbitmap(' ', curx * CHAR_WIDTH, cury * CHAR_HEIGHT);
+		//sdl_draw(curx * CHAR_WIDTH, cury * CHAR_HEIGHT, CHAR_WIDTH, CHAR_HEIGHT);
+		changed = 1;
+	}
+}
+
+static void scrollup(void)
+{
+	memcpy(screen, screen + CHAR_HEIGHT * PITCH, (LINES-1) * CHAR_HEIGHT * PITCH);
+	memset(screen + (LINES-1) * CHAR_HEIGHT * PITCH, 0, CHAR_HEIGHT * PITCH);
+	//sdl_draw(0, 0, WIDTH, HEIGHT);
+	changed = 1;
+}
+
 /* output character at cursor location*/
 void sdl_textout(unsigned char c)
 {
-	static int curx, cury;
-
 	changed = 1;
-	if (curx != 0) {	/* no simulated cursor in first column because of CR issue*/
-		sdl_drawbitmap(' ', curx * CHAR_WIDTH, cury * CHAR_HEIGHT);
-		//sdl_draw(curx * CHAR_WIDTH, cury * CHAR_HEIGHT, CHAR_WIDTH, CHAR_HEIGHT);
-	}
+	cursoroff();
 
 	switch (c) {
 	case '\0':	return;
@@ -258,25 +330,20 @@ void sdl_textout(unsigned char c)
 		curx = 0;
 scroll:
 		if (++cury >= LINES) {
-			memcpy(screen, screen + CHAR_HEIGHT * PITCH, (LINES-1) * CHAR_HEIGHT * PITCH);
-			memset(screen + (LINES-1) * CHAR_HEIGHT * PITCH, 0, CHAR_HEIGHT * PITCH);
+			scrollup();
 			cury = LINES - 1;
-			//sdl_draw(0, 0, WIDTH, HEIGHT);
 		}
 	}
 
 update:
-	if (curx != 0) {
-		sdl_drawbitmap('_', curx * CHAR_WIDTH, cury * CHAR_HEIGHT);
-		//sdl_draw(curx * CHAR_WIDTH, cury * CHAR_HEIGHT, CHAR_WIDTH, CHAR_HEIGHT);
-	}
+	cursoron();
 }
 
 /* keyboard handling*/
 
 int sdl_pollkbd(void)
 {
-	return (sdl_pollevents() >= 2);	/* 2=keyboard, 3=quit*/
+	return (sdl_pollevents() >= EVENT_KBD);	/* kbd or quit*/
 }
 
 /* convert key code to shift-key code*/
@@ -480,7 +547,7 @@ int sdl_readkbd(MWKEY *kbuf, MWSCANCODE *scancode)
  */
 int sdl_pollmouse(void)
 {
-	return (sdl_pollevents() == 1);	/* 1=mouse*/
+	return (sdl_pollevents() == EVENT_MOUSE);
 }
 
 /*

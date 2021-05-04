@@ -23,9 +23,9 @@
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
-#define MAINLOOP_TIMER 2000
-int mainloop_count = 0;
 #endif
+#define MAINLOOP_TIMER 10000
+static int mainloop_count = 0;
 
 extern int image_load (char * path);
 extern void image_close (void);
@@ -574,10 +574,13 @@ int main (int argc, char * argv [])
 			{
 			main_loop();
 
-#ifdef __EMSCRIPTEN__
-
 			if (++mainloop_count >= MAINLOOP_TIMER)
 				{
+				if (con_update())
+					_flag_exit = 1;
+
+#ifdef __EMSCRIPTEN__
+
 				// Actually an asynchronous function
 				// https://github.com/mfld-fr/emu86/issues/32#issuecomment-830690460
 
@@ -585,9 +588,10 @@ int main (int argc, char * argv [])
 				emscripten_sleep(1);
 				// Browser called back and stack was rewinded
 
+#endif
+
 				mainloop_count = 0;
 				}
-#endif
 			}
 
 		break;
@@ -603,7 +607,7 @@ int main (int argc, char * argv [])
 	con_term ();
 	serial_term ();
 
-	// Asked by @ghaer in https://github.com/mfld-fr/emu86/pull/37#issuecomment-830708810
+	// Asked by @ghaerr in https://github.com/mfld-fr/emu86/pull/37#issuecomment-830708810
 	// Because there are still some exit() in the code path
 	//return (err >= 0) ? EXIT_SUCCESS : EXIT_FAILURE;
 	_exit ((err >= 0) ? EXIT_SUCCESS : EXIT_FAILURE);

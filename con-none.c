@@ -15,6 +15,17 @@ int con_pos_set (byte_t row, byte_t col)
 	return 0;
 	}
 
+int con_pos_get (byte_t *row, byte_t *col)
+	{
+	*row = *col = 0;
+	return 0;
+	}
+
+int con_scrollup ()
+	{
+	return 0;
+	}
+
 int con_get_key (word_t * k)
 	{
 	*k = 0;
@@ -22,6 +33,11 @@ int con_get_key (word_t * k)
 	}
 
 int con_poll_key ()
+	{
+	return 0;
+	}
+
+int con_update ()
 	{
 	return 0;
 	}

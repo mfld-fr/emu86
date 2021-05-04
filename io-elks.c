@@ -8,6 +8,7 @@
 #include "int-elks.h"
 
 extern int info_level;
+extern int timer_enabled;
 
 //-------------------------------------------------------------------------------
 
@@ -34,6 +35,12 @@ int io_write_byte (word_t p, byte_t b)
 		case 0x20:  // 8259 PIC
 			int_io_write (p - 0x20, b);
 			break;
+
+		case 0x43: // 8253 timer
+			timer_enabled = 0;
+			if (b == 0x34)
+				timer_enabled = 1; // timer 0, binary count, mode 2
+			/* fall through*/
 
 		default:
 			if (info_level & 4) printf("[OUTB %3xh AL %0xh]\n", p, b);
