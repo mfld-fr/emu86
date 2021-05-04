@@ -15,13 +15,13 @@
 // Interrupt controller
 //------------------------------------------------------------------------------
 
-int _int_signal = 0;
+int _int_cpu = 0;
 
 // Interrupt controller procedure
 
 static void int_proc ()
 	{
-	int sig = 0;
+	int i = 0;
 
 	for (int line = 0; line < _int_line_max; line++)
 		{
@@ -31,12 +31,12 @@ static void int_proc ()
 			{
 			// At least one to signal
 
-			sig = 1;
+			i = 1;
 			break;
 			}
 		}
 
-	_int_signal = sig;
+	_int_cpu = i;
 	}
 
 // Set interrupt line

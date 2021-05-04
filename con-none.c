@@ -37,7 +37,7 @@ int con_poll_key ()
 	return 0;
 	}
 
-int con_update ()
+int con_proc ()
 	{
 	return 0;
 	}

@@ -52,7 +52,7 @@ int con_poll_key ()
 	return char_poll ();
 	}
 
-int con_update ()
+int con_proc ()
 	{
 	return 0;
 	}

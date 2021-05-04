@@ -210,163 +210,155 @@ static int debug_proc ()
 
 
 //------------------------------------------------------------------------------
-// Main loop
+// Processor procedure
 //------------------------------------------------------------------------------
 
 int info_level = 0;
 
-static void main_loop (void)
+static void cpu_proc (void)
 	{
+	int err;
+
 	static word_t last_seg = 0xFFFF;
-	static word_t last_off_0 = 0xFFFF;
-	static word_t last_off_1;
+	static word_t last_off = 0xFFFF;
+	static word_t next_off;
 
-		// Main loop
+	// Handle interrupt request
+
+	if (_int_cpu && flag_get (FLAG_IF) && rep_none () && seg_none ())
+		{
+		byte_t vect;
+		err = int_ack (&vect);
+		assert (!err);
+		err = exec_int (vect);
+		assert (!err);
+		}
+
+	// Decode next instruction
+
+	op_code_seg = seg_get (SEG_CS);
+	op_code_off = reg16_get (REG_IP);
+
+	// Code breakpoint test
+
+	if (addr_seg_off (op_code_seg, op_code_off) == _break_code_addr)
+		{
+		puts ("info: code breakpoint hit");
+		_flag_trace = 1;
+		_flag_prompt = 1;
+		}
+
+	// Optimize: no twice decoding of the same instruction
+	// Example: REPeated or LOOP on itself
+
+	if (op_code_seg != last_seg || op_code_off != last_off)
+		{
+		last_seg = op_code_seg;
+		last_off = op_code_off;
+
+		memset (&_op_desc, 0, sizeof _op_desc);
+
+		err = op_decode (&_op_desc);
+		if (err)
 			{
-			// Animate emulated devices
+			puts ("\nerror: unknown opcode");
+			_flag_trace = 1;
+			_flag_prompt = 1;
+			_flag_exec = 0;
+			}
 
-			timer_proc ();
+		// Suspicious operation on null opcodes
 
-			int err = serial_proc ();
-			if (err) {
-				_flag_exec = 0;
-				_flag_exit = 1;
-				return;
-				}
+		if (op_code_null)
+			{
+			puts ("\nerror: suspicious null opcodes");
 
-			// Handle interrupt request
+			op_code_null = 0;
 
-			if (_int_signal && flag_get (FLAG_IF) && rep_none () && seg_none ())
+			_flag_trace = 1;
+			_flag_prompt = 1;
+			_flag_exec = 0;
+			}
+
+		next_off = op_code_off;
+		}
+	else
+		{
+		// Already decoded
+		// Move directly to next instruction
+
+		op_code_off = next_off;
+		}
+
+	// Debug procedure
+	// After decoding the next instruction
+	// Before executing that instruction
+
+	err = debug_proc ();
+
+	// Execute operation
+
+	if (_flag_exec)
+		{
+		int trace_before = flag_get (FLAG_TF);
+
+		reg16_set (REG_IP, op_code_off);
+
+		err = op_exec (&_op_desc);
+		if (err)
+			{
+			puts (err < 0 ? "error: execute operation" : "warning: paused (HLT)");
+			_flag_trace = 1;
+			_flag_prompt = 1;
+			if (err < 0) reg16_set (REG_IP, last_off);
+			}
+		else
+			{
+			// Repeat the operation if prefixed
+
+			if (rep_active ())
 				{
-				byte_t vect;
-				err = int_ack (&vect);
-				assert (!err);
-				err = exec_int (vect);
-				assert (!err);
-				}
-
-			// Decode next instruction
-
-			op_code_seg = seg_get (SEG_CS);
-			op_code_off = reg16_get (REG_IP);
-
-			// Code breakpoint test
-
-			if (addr_seg_off (op_code_seg, op_code_off) == _break_code_addr)
-				{
-				puts ("info: code breakpoint hit");
-				_flag_trace = 1;
-				_flag_prompt = 1;
-				}
-
-			// Optimize: no twice decoding of the same instruction
-			// Example: REPeated or LOOP on itself
-
-			if (op_code_seg != last_seg || op_code_off != last_off_0)
-				{
-				last_seg = op_code_seg;
-				last_off_0 = op_code_off;
-
-				memset (&_op_desc, 0, sizeof _op_desc);
-
-				err = op_decode (&_op_desc);
-				if (err)
-					{
-					puts ("\nerror: unknown opcode");
-					_flag_trace = 1;
-					_flag_prompt = 1;
-					_flag_exec = 0;
-					}
-
-				// Suspicious operation on null opcodes
-
-				if (op_code_null)
-					{
-					puts ("\nerror: suspicious null opcodes");
-
-					op_code_null = 0;
-					_flag_trace = 1;
-					_flag_prompt = 1;
-					_flag_exec = 0;
-					}
-
-				last_off_1 = op_code_off;
+				reg16_set (REG_IP, last_off);
 				}
 			else
 				{
-				op_code_off = last_off_1;
+				seg_reset ();
 				}
 
-			// Debug procedure
-			// After decoding the next instruction
-			// Before executing that instruction
+			// Trace the operation if no prefix
 
-			err = debug_proc ();
-
-			// Execute operation
-
-			if (_flag_exec)
+			if (rep_none () && seg_none () && trace_before && flag_get (FLAG_TF))
 				{
-				int trace_before = flag_get (FLAG_TF);
-
-				reg16_set (REG_IP, op_code_off);
-
-				err = op_exec (&_op_desc);
+				err = exec_int (0x01);  // trace interrupt
 				if (err)
 					{
-					puts (err < 0 ? "error: execute operation" : "warning: paused (HLT)");
-					_flag_trace = 1;
-					_flag_prompt = 1;
-					if (err < 0) reg16_set (REG_IP, last_off_0);
-					}
-				else
-					{
-					// Repeat the operation if prefixed
-
-					if (rep_active ())
-						{
-						reg16_set (REG_IP, last_off_0);
-						}
-					else
-						{
-						seg_reset ();
-						}
-
-					// Trace the operation if no prefix
-
-					if (rep_none () && seg_none () && trace_before && flag_get (FLAG_TF))
-						{
-						err = exec_int (0x01);  // trace interrupt
-						if (err)
-							{
-							puts ("fatal: trace interrupt");
-							_flag_exit = 1;
-							}
-						}
+					puts ("fatal: trace interrupt");
+					_flag_exit = 1;
 					}
 				}
+			}  // op_exec
+		}  // flag_exec
 
-			// Data breakpoint test
-			// FIXME: break before executing data access
+	// Data breakpoint test
+	// FIXME: break before executing data access
 
-			if (_break_data_flag)
-				{
-				puts ("info: data breakpoint hit");
-				_break_data_flag = 0;
-				_flag_trace = 1;
-				_flag_prompt = 1;
-				}
+	if (_break_data_flag)
+		{
+		puts ("info: data breakpoint hit");
+		_break_data_flag = 0;
+		_flag_trace = 1;
+		_flag_prompt = 1;
+		}
 
-			// INT3 breakpoint test
+	// INT3 breakpoint test
 
-			if (_break_int_flag)
-				{
-				puts ("info: INT3 breakpoint hit");
-				_break_int_flag = 0;
-				_flag_trace = 1;
-				_flag_prompt = 1;
-				}
-			}
+	if (_break_int_flag)
+		{
+		puts ("info: INT3 breakpoint hit");
+		_break_int_flag = 0;
+		_flag_trace = 1;
+		_flag_prompt = 1;
+		}
 	}
 
 
@@ -518,7 +510,15 @@ int command_line (int argc, char * argv [])
 
 		}  // option loop
 
-	if (opt == '?' || optind != argc || !file_loaded)
+	// Force interactive mode if no file loaded
+	// to allow automatic testing without file
+
+	if (!file_loaded) {
+		_flag_trace = 1;
+		_flag_prompt = 1;
+		}
+
+	if (opt == '?' || optind != argc)
 		{
 		usage (argv [0]);
 		err = -1;
@@ -529,7 +529,7 @@ int command_line (int argc, char * argv [])
 
 
 //------------------------------------------------------------------------------
-// Program main
+// Main loop
 //------------------------------------------------------------------------------
 
 int main (int argc, char * argv [])
@@ -547,7 +547,7 @@ int main (int argc, char * argv [])
 		mem_io_reset ();
 		proc_reset ();
 
-		// Auto check
+		// LUTs auto check
 
 		err = check_exec ();
 		if (err) {
@@ -570,11 +570,26 @@ int main (int argc, char * argv [])
 
 		while (!_flag_exit)
 			{
-			main_loop();
+			// Animate emulated devices
+
+			// Idea there is to have one thread per device
+			// even if using only one thread for all
+
+			timer_proc ();
+
+			err = serial_proc ();
+			if (err) break;
+
+			// TODO: optimize PIC processing with single pass
+			// int_proc ();
+
+			cpu_proc ();
+
+			// TODO: move that logic in the console procedure
 
 			if (++mainloop_count >= MAINLOOP_TIMER)
 				{
-				if (con_update())
+				if (con_proc ())
 					_flag_exit = 1;
 
 #ifdef __EMSCRIPTEN__

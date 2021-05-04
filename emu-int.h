@@ -18,7 +18,7 @@ extern int _int_mask [];  // mask flag
 extern int _int_req  [];  // requested flag
 extern int _int_serv [];  // serviced flag
 
-extern int _int_signal;    // from controller to processor
+extern int _int_cpu;      // from controller to processor
 
 void int_line_set (int line, int stat);
 int int_ack (byte_t * vect);
@@ -49,7 +49,7 @@ int int_hand (byte_t i);
 
 void int_init (void);
 
-// TODO: move to rom-xxx
+// TODO: move to rom header
 void rom_init (void);
 void rom_term (void);
 int rom_image_load (char *path);

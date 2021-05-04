@@ -114,7 +114,7 @@ printf("KBD: %x\n", mwkey);
 	}
 
 
-int con_update ()
+int con_proc ()
 	{
 	if (changed) sdl_draw(0, 0, 0, 0);
 	return sdl_pollevents() == EVENT_QUIT;	// return 1 to terminate
