@@ -506,17 +506,15 @@ int command_line (int argc, char * argv [])
 			file_address = -1;
 			}
 
-#ifdef ELKS
 		if (disk_image_path)
 			{
-			if (!image_load (disk_image_path))
+			if (!rom_image_load (disk_image_path))
 				{
 				file_loaded = 1;
 				}
 
 			disk_image_path = NULL;
 			}
-#endif
 
 		}  // option loop
 
@@ -599,11 +597,7 @@ int main (int argc, char * argv [])
 
 	// Cleanup
 
-#ifdef ELKS
-	// FIXME: move to rom_term()
-	image_close ();
-#endif
-
+	rom_term ();
 	con_term ();
 	serial_term ();
 

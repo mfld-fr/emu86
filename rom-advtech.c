@@ -149,3 +149,12 @@ int_num_hand_t _int_tab [] = {
 void rom_init (void)
 	{
 	}
+
+int rom_image_load (char * path)
+	{
+	return 1;	// error
+	}
+
+void rom_term (void)
+	{
+	}

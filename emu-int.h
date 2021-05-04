@@ -51,3 +51,5 @@ void int_init (void);
 
 // TODO: move to rom-xxx
 void rom_init (void);
+void rom_term (void);
+int rom_image_load (char *path);
