@@ -52,6 +52,10 @@ int con_poll_key ()
 	return char_poll ();
 	}
 
+int con_update ()
+	{
+	return 0;
+	}
 
 void con_raw ()
 	{

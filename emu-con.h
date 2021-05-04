@@ -13,6 +13,7 @@ int con_scrollup ();
 
 int con_get_key (word_t * k);
 int con_poll_key ();
+int con_update ();
 
 void con_normal ();
 void con_raw ();

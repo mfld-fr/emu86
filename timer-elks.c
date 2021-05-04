@@ -7,15 +7,7 @@
 
 #include "int-elks.h"
 
-#ifdef __EMSCRIPTEN__
-#define TIMER_MAX 1500
-//#define TIMER_MAX 20000		// required for BIOS console
-#elif SDL
-#define TIMER_MAX 3000			// OK for emu86-rom.config only
-//#define TIMER_MAX 20000		// required for BIOS console
-#else
-#define TIMER_MAX 20000
-#endif
+#define TIMER_MAX 3000
 
 static int timer_count = 0;
 
