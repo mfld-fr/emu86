@@ -25,6 +25,17 @@ void timer_proc ()
 		}
 	}
 
+
+void timer_io_write (word_t p, byte_t b)
+	{
+	if (p == 0x43) {
+		timer_enabled = 0;
+		if (b == 0x34)
+			timer_enabled = 1; // timer 0, binary count, mode 2
+		}
+	}
+
+
 void timer_init ()
 	{
 	}

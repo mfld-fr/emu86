@@ -6,9 +6,9 @@
 #include <stdio.h>
 #include "emu-mem-io.h"
 #include "int-elks.h"
+#include "timer-elks.h"
 
 extern int info_level;
-extern int timer_enabled;
 
 //-------------------------------------------------------------------------------
 
@@ -37,10 +37,9 @@ int io_write_byte (word_t p, byte_t b)
 			break;
 
 		case 0x43: // 8253 timer
-			timer_enabled = 0;
-			if (b == 0x34)
-				timer_enabled = 1; // timer 0, binary count, mode 2
-			/* fall through*/
+			// FIXME: base I/O port of timer ?
+			timer_io_write (p, b);
+			/* fall through */
 
 		default:
 			if (info_level & 4) printf("[OUTB %3xh AL %0xh]\n", p, b);
