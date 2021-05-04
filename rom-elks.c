@@ -189,7 +189,7 @@ static struct diskinfo * find_drive (byte_t drive)
 	}
 
 
-int image_load (char * path)
+int rom_image_load (char * path)
 	{
 	byte_t d = 0, h, s;
 	word_t c;
@@ -255,7 +255,7 @@ int image_load (char * path)
 		return 1;
 	}
 
-void image_close (void)
+void rom_term (void)
 		{
 		struct diskinfo *dp;
 		for (dp = diskinfo; dp < &diskinfo[sizeof(diskinfo)/sizeof(diskinfo[0])]; dp++)
