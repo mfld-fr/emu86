@@ -55,6 +55,9 @@ void serial_int (void)
 // Serial device procedure
 // Called from main emulator loop
 
+static int loop_count = 0;
+#define LOOP_MAX 5000
+
 int serial_proc (void)
 	{
 	int err = 0;
@@ -62,7 +65,15 @@ int serial_proc (void)
 	while (1) {
 		// Input stream
 
-		while (1) {
+		while (1)
+			{
+			// Moderate the poll rate
+			// for more instruction processing
+
+			loop_count++;
+			if (loop_count < LOOP_MAX) break;
+			loop_count = 0;
+
 			int res = serial_poll ();
 			if (!res) break;
 
