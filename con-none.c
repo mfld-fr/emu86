@@ -29,12 +29,12 @@ int con_scrollup ()
 int con_get_key (word_t * k)
 	{
 	*k = 0;
-	return 0;
+	return 1;  // no key
 	}
 
 int con_poll_key ()
 	{
-	return 0;
+	return 0;  // no key
 	}
 
 int con_proc ()

@@ -11,10 +11,8 @@
 #include <string.h>
 #include <SDL2/SDL.h>
 
-#include "emu-types.h"
-#include "con-sdl.h"
 #include "emu-con.h"
-#include "list.h"
+#include "con-sdl.h"
 
 /* configurable parameters*/
 #define COLS		80
@@ -36,18 +34,6 @@ static float sdlZoom = 1.0;
 static unsigned char *screen;
 static int changed;
 static int curx, cury;
-
-// Keyboard queue
-// Key enqueued by the SDL event loop
-// Key dequeued by the console get() & poll()
-
-typedef struct _key_s
-	{
-	list_s node;
-	word_t k;
-	} key_s;
-
-static list_s key_queue;
 
 
 /* draw a character bitmap*/
@@ -184,35 +170,6 @@ int con_scrollup ()
 	}
 
 
-// TODO: move to generic console
-
-int con_get_key (word_t * pk)
-	{
-	list_s * next = key_queue.next;
-
-	// WARNING : non-blocking call with SDL console
-	if (next == &key_queue) return 1;  // no key
-
-	key_s * key = structof (key_s, node, next);
-	*pk = key->k;
-
-	list_remove (next);
-	free (next);
-
-	return 0;  // got key
-	}
-
-
-// TODO: move to generic console
-
-int con_poll_key (void)
-	{
-	list_s * next = key_queue.next;
-	if (next != &key_queue) return 1;  // has key
-	return 0;  // no key
-	}
-
-
 // Shift key using the QWERTY layout
 
 static SDL_Keycode key_shift (SDL_Keycode kc)
@@ -286,12 +243,7 @@ static void sdl_key (Uint8 state, SDL_Keysym sym)
 			break;
 			}
 
-		key_s * key = malloc (sizeof (key_s));
-		if (key) {
-			list_insert_after (&key_queue, &key->node);
-			key->k = (word_t) kc;
-			}
-
+		con_put_key ((word_t) kc);
 		break;
 		}
 	}
@@ -405,8 +357,7 @@ int con_init(void)
 	}
 	memset(screen, 0x00, HEIGHT*PITCH);
 
-	list_init (&key_queue);
-
+	con_init_key ();
 	return 0;
 }
 

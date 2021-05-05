@@ -38,24 +38,26 @@ int con_scrollup ()
 	return 0;
 	}
 
-int con_get_key (word_t * k)
-	{
-	byte_t c = 0;
-	int err = char_recv (&c);
-	*k = (word_t) c;
-	return err;
-	}
-
-
-int con_poll_key ()
-	{
-	return char_poll ();
-	}
 
 int con_proc ()
 	{
-	return 0;
+	int err;
+
+	while (1)
+		{
+		err = char_poll ();
+		if (err <= 0) break;
+
+		byte_t c = 0;
+		err = char_recv (&c);
+
+		if (!err) con_put_key ((word_t) c);
+		break;
+		}
+
+	return err;
 	}
+
 
 void con_raw ()
 	{
@@ -70,6 +72,7 @@ void con_normal ()
 
 int con_init ()
 	{
+	con_init_key ();
 	return char_init ();
 	}
 
@@ -78,3 +81,5 @@ void con_term ()
 	{
 	char_term ();
 	}
+
+//-------------------------------------------------------------------------------
