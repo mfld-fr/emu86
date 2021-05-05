@@ -182,7 +182,7 @@ static struct diskinfo * find_drive (byte_t drive)
 	{
 	struct diskinfo *dp;
 
-	for (dp = diskinfo; dp <= &diskinfo[sizeof(diskinfo)/sizeof(diskinfo[0])]; dp++)
+	for (dp = diskinfo; dp < &diskinfo[sizeof(diskinfo)/sizeof(diskinfo[0])]; dp++)
 		if (dp->fd != -1 && dp->drive == drive)
 			return dp;
 	return NULL;
@@ -235,7 +235,7 @@ int rom_image_load (char * path)
 			break;
 		}
 
-		for (dp = diskinfo; dp <= &diskinfo[sizeof(diskinfo)/sizeof(diskinfo[0])]; dp++)
+		for (dp = diskinfo; dp < &diskinfo[sizeof(diskinfo)/sizeof(diskinfo[0])]; dp++)
 			{
 			if (dp->fd == -1)
 				{
