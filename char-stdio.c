@@ -68,14 +68,6 @@ int char_poll ()
 	}
 
 
-void catch_int ()
-{
-	extern int _flag_prompt;
-	// FIXME: SIGINT should be caught in main module
-	_flag_prompt = 1;
-}
-
-
 void char_raw ()
 	{
 	struct termios termios;
@@ -120,9 +112,6 @@ int char_init ()
 #endif
 	tcgetattr(0, &def_termios);
 
-	// TODO: move to main()
-	signal(SIGINT, catch_int);
-	siginterrupt(SIGINT, 0);
 	char_raw();
 
 	signal(SIGABRT, catch_abort);

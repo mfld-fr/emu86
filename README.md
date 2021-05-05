@@ -91,4 +91,5 @@ To build and run browser version (requires ELKS):
 ## SEE ALSO
 
 Other projects of interest:
-- '8086tiny': https://github.com/adriancable/8086tiny
+- [8086tiny](https://github.com/adriancable/8086tiny): a very compact PC emulator
+- [s80x86](https://github.com/jamieiles/80x86): FPGA implementation of 80186

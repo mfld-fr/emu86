@@ -96,8 +96,7 @@ static addr_t * _break_code_addr = NULL;
 static addr_t _break_step_over_code_addr = -1;
 
 static int _flag_trace  = 0;  // trace next instruction
-// FIXME: used by signal handler in character backend
-/*static*/ int _flag_prompt = 0;  // prompt for debug command
+static int _flag_prompt = 0;  // prompt for debug command
 static int _flag_exec   = 1;  // execute next instruction
 static int _flag_exit   = 0;  // exit main loop
 
@@ -561,11 +560,19 @@ int command_line (int argc, char * argv [])
 #ifdef IPS
 static int _flag_alarm = 0;
 
-void sigalarm (int s)
+static void sigalarm (int s)
 	{
 	_flag_alarm = 1;
 	}
 #endif
+
+
+static void sigint (int s)
+	{
+	_flag_trace = 1;
+	_flag_prompt = 1;
+	}
+
 
 int main (int argc, char * argv [])
 	{
@@ -603,13 +610,18 @@ int main (int argc, char * argv [])
 
 		op_code_base = mem_get_addr (0);
 
+		// Use interrupt signal to enter debugging
+
+		struct sigaction sa;
+		sa.sa_handler = sigint;
+		sa.sa_flags = SA_RESTART;
+		sigaction (SIGINT, &sa, NULL);
+
 		// Use alarm signal for performance metering
 
 #ifdef IPS
 		int loop_count = 0;
-		struct sigaction sa;
 		sa.sa_handler = sigalarm;
-		sa.sa_flags = SA_RESTART;
 		sigaction (SIGALRM, &sa, NULL);
 		alarm (1);
 #endif
