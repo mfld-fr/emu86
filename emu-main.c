@@ -168,6 +168,7 @@ static int debug_proc ()
 				case '\n':
 					_flag_trace = 1;
 					_flag_prompt = 1;
+					_flag_exec = 1;
 					break;
 
 				// Continue tracing

@@ -64,15 +64,15 @@ ifeq ($(CONSOLE), none)
 endif
 
 ifeq ($(CONSOLE), stdio)
-	EMU86_OBJS += con-char.o char-stdio.o
+	EMU86_OBJS += emu-con.o con-char.o char-stdio.o
 endif
 
 ifeq ($(CONSOLE), pty)
-	EMU86_OBJS += con-char.o char-pty.o
+	EMU86_OBJS += emu-con.o con-char.o char-pty.o
 endif
 
 ifeq ($(CONSOLE), sdl)
-	EMU86_OBJS += con-sdl.o rom8x16.o
+	EMU86_OBJS += emu-con.o con-sdl.o rom8x16.o
 	CFLAGS += -DSDL=1
 	LDLIBS += -lSDL2
 endif
