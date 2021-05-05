@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <signal.h>
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -554,6 +555,17 @@ int command_line (int argc, char * argv [])
 // Main loop
 //------------------------------------------------------------------------------
 
+//#define IPS
+
+#ifdef IPS
+static int _flag_alarm = 0;
+
+void sigalarm (int s)
+	{
+	_flag_alarm = 1;
+	}
+#endif
+
 int main (int argc, char * argv [])
 	{
 	int err = 0;
@@ -589,6 +601,17 @@ int main (int argc, char * argv [])
 		con_init ();     // Console initialization
 
 		op_code_base = mem_get_addr (0);
+
+		// Use alarm signal for performance metering
+
+#ifdef IPS
+		int loop_count = 0;
+		struct sigaction sa;
+		sa.sa_handler = sigalarm;
+		sa.sa_flags = SA_RESTART;
+		sigaction (SIGALRM, &sa, NULL);
+		alarm (1);
+#endif
 
 		while (!_flag_exit)
 			{
@@ -627,7 +650,20 @@ int main (int argc, char * argv [])
 
 				mainloop_count = 0;
 				}
-			}
+
+#ifdef IPS
+			loop_count++;
+
+			if (_flag_alarm)
+				{
+				printf ("info: ips=%i\n", loop_count);
+				loop_count = 0;
+				_flag_alarm = 0;
+				alarm (1);
+				}
+#endif
+
+			}  // flag_exit
 
 		break;
 		}
