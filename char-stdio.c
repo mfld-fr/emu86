@@ -4,7 +4,6 @@
 #include <termios.h>
 #include <string.h>
 #include <unistd.h>
-#include <assert.h>
 #include <sys/select.h>
 #include <signal.h>
 #include <sys/ioctl.h>
@@ -63,16 +62,16 @@ int char_poll ()
 	FD_SET (0, &fdsr);
 	struct timeval tv = { 0L, 0L };  // immediate
 	int s = select (1, &fdsr, NULL, NULL, &tv);
-	assert (s >= 0);
-	if (FD_ISSET (0, &fdsr)) return 1;
-	return 0;
+	if (s < 0) return -1;
+	if (FD_ISSET (0, &fdsr)) return 1;  // has char
+	return 0;  // no char
 	}
 
 
 void catch_int ()
 {
 	extern int _flag_prompt;
-	// FIXME: SIGINT should be hooked in main()
+	// FIXME: SIGINT should be caught in main module
 	_flag_prompt = 1;
 }
 
@@ -101,6 +100,11 @@ void char_normal ()
 	}
 
 
+// Keep this signal catching until all the assert() are removed
+// to avoid leaving the EMU86 terminal in raw mode after abort
+
+// See GitHub issue #15
+
 static void catch_abort(int sig)
 	{
 	char_term();
@@ -116,6 +120,7 @@ int char_init ()
 #endif
 	tcgetattr(0, &def_termios);
 
+	// TODO: move to main()
 	signal(SIGINT, catch_int);
 	siginterrupt(SIGINT, 0);
 	char_raw();

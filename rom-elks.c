@@ -409,6 +409,9 @@ static int int_16h ()
 		{
 		// Normal keyboard read
 
+		// WARNING: non-blocking call with SDL console
+		// while blocking in official BIOS.
+
 		case 0x00:
 			if (key_prev)
 				{

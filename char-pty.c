@@ -11,7 +11,6 @@
 #include <termios.h>
 #include <string.h>
 #include <unistd.h>
-#include <assert.h>
 #include <sys/select.h>
 
 #include "emu-char.h"
@@ -63,9 +62,9 @@ int char_poll ()
 	FD_SET (_ptm, &fdsr);
 	struct timeval tv = { 0L, 0L };  // immediate
 	int s = select (_ptm + 1, &fdsr, NULL, NULL, &tv);
-	assert (s >= 0);
-	if (FD_ISSET (_ptm, &fdsr)) return 1;
-	return 0;
+	if (s < 0) return -1;
+	if (FD_ISSET (_ptm, &fdsr)) return 1;  // has char
+	return 0;  // no char
 	}
 
 

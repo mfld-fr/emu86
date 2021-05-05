@@ -9,5 +9,5 @@ typedef unsigned long  dword_t;
 
 // Container helper
 
-#define structof (type, member, pointer) ( \
+#define structof(type, member, pointer) ( \
 	(type *) ((char *) pointer - offsetof (type, member)))

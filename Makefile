@@ -19,6 +19,7 @@ EMU86_PROG = emu86.html
 endif
 
 EMU86_HDRS = \
+	list.h \
 	emu-types.h \
 	op-id.h \
 	op-id-name.h \
@@ -35,6 +36,7 @@ EMU86_HDRS = \
 	# end of list
 
 EMU86_OBJS = \
+	list.o \
 	op-common.o \
 	op-id-name.o \
 	op-class.o \
