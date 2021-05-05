@@ -90,7 +90,9 @@ static int file_load (addr_t start, char * path)
 
 static op_desc_t _op_desc;
 
-static addr_t _break_code_addr = -1;
+static int _break_code_addr_count = 0;
+static addr_t * _break_code_addr = NULL;
+static addr_t _break_step_over_code_addr = -1;
 
 static int _flag_trace  = 0;  // trace next instruction
 // FIXME: used by signal handler in character backend
@@ -154,7 +156,7 @@ static int debug_proc ()
 				// Step over
 
 				case 'p':
-					_break_code_addr = addr_seg_off (op_code_seg, op_code_off);
+					_break_step_over_code_addr = addr_seg_off (op_code_seg, op_code_off);
 					_flag_trace = 0;
 					_flag_prompt = 0;
 					break;
@@ -215,6 +217,7 @@ int info_level = 0;
 static void cpu_proc (void)
 	{
 	int err;
+	int bp_idx;
 
 	static word_t last_seg = 0xFFFF;
 	static word_t last_off = 0xFFFF;
@@ -238,9 +241,19 @@ static void cpu_proc (void)
 
 	// Code breakpoint test
 
-	if (addr_seg_off (op_code_seg, op_code_off) == _break_code_addr)
+	for (bp_idx = 0; bp_idx < _break_code_addr_count; bp_idx++)
 		{
-		puts ("info: code breakpoint hit");
+		if (addr_seg_off (op_code_seg, op_code_off) == _break_code_addr[bp_idx])
+			{
+			printf ("info: code breakpoint %d hit\n", bp_idx);
+			_flag_trace = 1;
+			_flag_prompt = 1;
+			}
+		}
+
+	if (addr_seg_off (op_code_seg, op_code_off) == _break_step_over_code_addr)
+		{
+		puts ("info: step-over breakpoint hit");
 		_flag_trace = 1;
 		_flag_prompt = 1;
 		}
@@ -388,6 +401,8 @@ int command_line (int argc, char * argv [])
 	addr_t file_address = -1;
 	char * file_path = NULL;
 	char * disk_image_path = NULL;
+	addr_t new_bp = -1;
+	addr_t * new_array = NULL;
 
 	while (1)
 		{
@@ -436,15 +451,25 @@ int command_line (int argc, char * argv [])
 				break;
 
 			case 'c':  // code breakpoint address
-				if (sscanf (optarg, "%lx", &_break_code_addr) != 1)
+				if (sscanf (optarg, "%lx", &new_bp) != 1)
 					{
 					puts ("error: bad code breakpoint address");
 					}
 				else
 					{
-					printf ("info: code breakpoint address %.5lXh\n", _break_code_addr);
+					printf ("info: code breakpoint address %.5lXh\n", new_bp);
+					new_array = realloc(_break_code_addr, (_break_code_addr_count + 1)*sizeof(*_break_code_addr));
+					if (!new_array)
+						{
+						puts("error: out of memory allocating new code breakpoint");
+						}
+					else
+						{
+						_break_code_addr = new_array;
+						_break_code_addr_count++;
+						_break_code_addr[_break_code_addr_count-1] = new_bp;
+						}
 					}
-
 				break;
 
 			case 'd':  // data breakpoint address
@@ -608,6 +633,10 @@ int main (int argc, char * argv [])
 		}
 
 	// Cleanup
+	if (_break_code_addr_count)
+		{
+		free(_break_code_addr);
+		}
 
 	rom_term ();
 	con_term ();
