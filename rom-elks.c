@@ -146,6 +146,18 @@ static int int_10h ()
 	}
 
 
+// BIOS device list
+
+static int int_11h ()
+	{
+	// 1 floppy drive
+	// 80x25 monochrome
+
+	reg16_set (REG_AX, 0x0031);
+	return 0;
+	}
+
+
 // BIOS memory services
 
 static int int_12h ()
@@ -305,7 +317,7 @@ static int int_13h ()
 	byte_t ah = reg8_get (REG_AH);
 	byte_t d, h, s, n;
 	word_t c, seg, off;
-	int err = 1;
+	int err = -1;
 	struct diskinfo *dp;
 
 	switch (ah)
@@ -329,13 +341,13 @@ static int int_13h ()
 			dp = find_drive (d);
 			if (!dp || c >= dp->cylinders || h >= dp->heads || s > dp->sectors)
 				{
-				printf("INT 13h fn %xh: Invalid DCHS %d/%d/%d/%d\n", ah, d, c, h, s);
+				printf("INT 13h AH=%hxh: invalid DCHS %d/%d/%d/%d\n", ah, d, c, h, s);
 				break;
 				}
 
 			if (s + n > dp->sectors + 1)
 				{
-				printf("INT 13h fn %xh: Multi-track I/O operation rejected\n", ah);
+				printf("INT 13h AH=%hxh: multi-track I/O operation rejected\n", ah);
 				break;
 				}
 
@@ -371,7 +383,7 @@ static int int_13h ()
 		}
 
 	flag_set (FLAG_CF, err? 1: 0);
-	return 0;
+	return err;
 	}
 
 
@@ -432,9 +444,11 @@ static int int_16h ()
 		// Peek character
 
 		case 0x01:
+		case 0x11:
 			if (con_poll_key ())
 				{
 				flag_set (FLAG_ZF, 0);
+
 				err = con_get_key (&key_prev);
 				if (err) break;
 
@@ -464,8 +478,8 @@ static int int_16h ()
 			break;
 
 		default:
-			printf ("fatal: INT 16h: AH=%hxh not implemented\n", ah);
-			assert (0);
+			printf ("error: INT 16h: AH=%hXh not implemented\n", ah);
+			err = -1;
 		}
 
 	return err;
@@ -534,6 +548,7 @@ static int int_1Ah ()
 int_num_hand_t _int_tab [] = {
 	{ 0x03, int_03h },
 	{ 0x10, int_10h },
+	{ 0x11, int_11h },
 	{ 0x12, int_12h },
 	{ 0x13, int_13h },  // BIOS disk services
 	{ 0x15, int_15h },
