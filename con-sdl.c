@@ -14,6 +14,7 @@
 #include "emu-con.h"
 #include "emu-mem-io.h"
 #include "con-sdl.h"
+#include "mem-io-elks.h"
 
 /* configurable parameters*/
 #define COLS		80

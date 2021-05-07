@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #include "emu-mem-io.h"
+#include "mem-io-elks.h"
 
 byte_t mem_stat [MEM_MAX];
 

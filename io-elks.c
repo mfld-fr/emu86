@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include "emu-mem-io.h"
+#include "mem-io-elks.h"
 #include "int-elks.h"
 #include "timer-elks.h"
 

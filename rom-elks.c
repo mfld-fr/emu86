@@ -14,6 +14,7 @@
 #include "emu-proc.h"
 #include "emu-con.h"
 #include "emu-int.h"
+#include "mem-io-elks.h"
 
 extern int info_level;
 
