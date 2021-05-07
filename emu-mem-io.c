@@ -118,8 +118,6 @@ void mem_io_reset ()
 	// Used to check interrupt vector initialized in op_int()
 
 	memset (mem_stat, 0xFF, sizeof mem_stat);
-
-	memset (mem_stat+BDA_BASE, 0x00, 256);	// FIXME move to rom-elks.c?
 	}
 
 //-------------------------------------------------------------------------------

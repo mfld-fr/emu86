@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <string.h>
 #include <fcntl.h>
 #include <assert.h>
 #include <sys/stat.h>
@@ -643,7 +644,8 @@ void rom_init (void)
 
 	// BIOS Data Area (BDA) setup for EGA/MDA adaptors
 
-	mem_write_byte (BDA_BASE+0x49, 0, 3); 			// video mode (7=MDA)
+	memset (mem_stat+BDA_BASE, 0x00, 256);
+	mem_write_byte (BDA_BASE+0x49, 3, 1); 			// video mode (7=MDA)
 	mem_write_byte (BDA_BASE+0x4a, VID_COLS, 1);	// console width
 	mem_write_word (BDA_BASE+0x4c, VID_PAGE_SIZE, 1); // page size
 	mem_write_word (BDA_BASE+0x63, CRTC_IOBASE, 1);	// 6845 CRTC base register
