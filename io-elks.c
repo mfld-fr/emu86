@@ -10,6 +10,9 @@
 
 extern int info_level;
 
+byte_t crtc_curhi, crtc_curlo;		// 6845 CRTC cursor
+static byte_t crtc_lastcommand;
+
 //-------------------------------------------------------------------------------
 
 int io_read_byte (word_t p, byte_t * b)
@@ -39,7 +42,22 @@ int io_write_byte (word_t p, byte_t b)
 		case 0x43: // 8253 timer
 			// FIXME: base I/O port of timer ?
 			timer_io_write (p, b);
-			/* fall through */
+			break;
+
+		case 0x80:					// I/O delay
+			break;
+
+		case CRTC_IOBASE:			// 6845 CRTC
+			crtc_lastcommand = b;
+			break;
+
+		case CRTC_IOBASE+1:
+			if (crtc_lastcommand == 0x0E)
+				crtc_curhi = b;
+			else if (crtc_lastcommand == 0x0F)
+				crtc_curlo = b;
+			// set display page 0x0C/0x0D ignored
+			break;
 
 		default:
 			if (info_level & 4) printf("[OUTB %3xh AL %0xh]\n", p, b);

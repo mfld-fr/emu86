@@ -5,11 +5,29 @@
 
 #include "emu-mem-io.h"
 
-static byte_t mem_stat [MEM_MAX];
+byte_t mem_stat [MEM_MAX];
 
 byte_t _break_data_flag = 0;
 addr_t _break_data_addr = 0x100000;
 
+int vid_minx = 32767, vid_miny = 32767;
+int vid_maxx = -1, vid_maxy = -1;
+#define MIN(a,b)      ((a) < (b) ? (a) : (b))
+#define MAX(a,b)      ((a) > (b) ? (a) : (b))
+
+void update_dirty_region (int x, int y)
+	{
+	vid_minx = MIN(x, vid_minx);
+	vid_miny = MIN(y, vid_miny);
+	vid_maxx = MAX(vid_maxx, x);
+	vid_maxy = MAX(vid_maxy, y);
+	}
+
+void reset_dirty_region ()
+	{
+	vid_minx = vid_miny = 32767;
+	vid_maxx = vid_maxy = -1;
+	}
 
 // Memory access
 
@@ -46,9 +64,16 @@ void mem_write_byte (addr_t a, byte_t b, byte_t init)
 	{
 	assert (a < MEM_MAX);
 
-	// Protect ROM
+	if (a >= VID_BASE && a < (VID_BASE + VID_PAGE_SIZE))
+		{
+		byte_t * p = (byte_t *) mem_get_addr (a);
+		*p = b;
 
-	if (a >= ROM_BASE && !init)
+		// calculate bounding rectangle
+		a = (a - VID_BASE) / 2;
+		update_dirty_region(a % VID_COLS, a / VID_COLS);
+		}
+	else if (a >= ROM_BASE && !init)		// Protect ROM
 		{
 		printf ("warning: writing byte into ROM @ %lxh\n", a);
 		}
@@ -63,9 +88,16 @@ void mem_write_word (addr_t a, word_t w, byte_t init)
 	{
 	assert (a < MEM_MAX - 1);
 
-	// Protect ROM
+	if (a >= VID_BASE && a < (VID_BASE + VID_PAGE_SIZE))
+		{
+		word_t * p = (word_t *) mem_get_addr (a);
+		*p = w;
 
-	if (a >= (ROM_BASE - 1) && !init)
+		// calculate bounding rectangle
+		a = (a - VID_BASE) / 2;
+		update_dirty_region(a % VID_COLS, a / VID_COLS);
+		}
+	else if (a >= (ROM_BASE - 1) && !init)	// Protect ROM
 		{
 		printf ("warning: writing word into ROM @ %lxh\n", a);
 		}
@@ -86,6 +118,8 @@ void mem_io_reset ()
 	// Used to check interrupt vector initialized in op_int()
 
 	memset (mem_stat, 0xFF, sizeof mem_stat);
+
+	memset (mem_stat+BDA_BASE, 0x00, 256);	// FIXME move to rom-elks.c?
 	}
 
 //-------------------------------------------------------------------------------

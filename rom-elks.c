@@ -640,4 +640,11 @@ void rom_init (void)
 	mem_write_byte (0xFFFF0, 0xEA,   1);  // JMPF
 	mem_write_word (0xFFFF1, 0x0000, 1);
 	mem_write_word (0xFFFF3, 0xF000, 1);
+
+	// BIOS Data Area (BDA) setup for EGA/MDA adaptors
+
+	mem_write_byte (BDA_BASE+0x49, 0, 3); 			// video mode (7=MDA)
+	mem_write_byte (BDA_BASE+0x4a, VID_COLS, 1);	// console width
+	mem_write_word (BDA_BASE+0x4c, VID_PAGE_SIZE, 1); // page size
+	mem_write_word (BDA_BASE+0x63, CRTC_IOBASE, 1);	// 6845 CRTC base register
 	}

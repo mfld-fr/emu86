@@ -12,6 +12,7 @@
 #include <SDL2/SDL.h>
 
 #include "emu-con.h"
+#include "emu-mem-io.h"
 #include "con-sdl.h"
 
 /* configurable parameters*/
@@ -32,7 +33,7 @@ static SDL_Renderer *sdlRenderer;
 static SDL_Texture *sdlTexture;
 static float sdlZoom = 1.0;
 static unsigned char *screen;
-static int changed;
+//static int changed;
 static int curx, cury;
 
 
@@ -76,38 +77,74 @@ static void sdl_drawbitmap(unsigned char c, int x, int y)
 }
 
 
+// draw characters from adapter RAM
+static void draw_video_ram(int sx, int sy, int ex, int ey)
+{
+	int x, y;
+
+	for (y = sy; y < ey; y++)
+	{
+		int j = VID_BASE + (y * COLS + sx) * 2;
+		for (x = sx; x < ex; x++)
+		{
+			sdl_drawbitmap(mem_stat[j], x * CHAR_WIDTH, y * CHAR_HEIGHT);
+			j += 2;
+		}
+	}
+}
+
+
 static void cursoron(void)
 {
+#if 0
 	/* no simulated cursor in first column because of CR issue*/
 	if (curx != 0)
 	{
 		sdl_drawbitmap('_', curx * CHAR_WIDTH, cury * CHAR_HEIGHT);
 		changed = 1;
 	}
+#endif
+	mem_stat[BDA_BASE+0x50] = curx;
+	mem_stat[BDA_BASE+0x51] = cury;
+	int pos = cury * COLS + curx;
+	crtc_curhi = pos >> 8;
+	crtc_curlo = pos & 0xff;
 }
 
 static void cursoroff(void)
 {
+#if 0
 	if (curx != 0)
 	{
 		sdl_drawbitmap(' ', curx * CHAR_WIDTH, cury * CHAR_HEIGHT);
 		changed = 1;
 	}
+#endif
 }
 
 
 static void scrollup(void)
 {
+#if 0
 	memcpy(screen, screen + CHAR_HEIGHT * PITCH, (LINES-1) * CHAR_HEIGHT * PITCH);
 	memset(screen + (LINES-1) * CHAR_HEIGHT * PITCH, 0, CHAR_HEIGHT * PITCH);
 	changed = 1;
+#endif
+	// scroll adapter RAM
+
+	int pitch = COLS * 2;
+	byte_t *vid = mem_stat + VID_BASE;
+	memcpy(vid, vid + pitch, (LINES-1) * pitch);
+	memset(vid + (LINES-1) * pitch, 0, pitch);
+	update_dirty_region (0, 0);
+	update_dirty_region (COLS-1, LINES-1);
 }
 
 
 /* output character at cursor location*/
 void sdl_textout(unsigned char c)
 {
-	changed = 1;
+	//changed = 1;
 	cursoroff();
 
 	switch (c) {
@@ -117,7 +154,9 @@ void sdl_textout(unsigned char c)
 	case '\n':  goto scroll;
 	}
 
-	sdl_drawbitmap(c, curx * CHAR_WIDTH, cury * CHAR_HEIGHT);
+	//sdl_drawbitmap(c, curx * CHAR_WIDTH, cury * CHAR_HEIGHT);
+	mem_stat[VID_BASE + (cury * COLS + curx) * 2] = c;
+	update_dirty_region (curx, cury);
 
 	if (++curx >= COLS) {
 		curx = 0;
@@ -268,6 +307,7 @@ static void sdl_draw(int x, int y, int width, int height)
 	r.w = width? width: WIDTH;
 	r.h = height? height: HEIGHT;
 
+//printf("DRAW %d,%d %d,%d\n", x, y, width, height);
 	unsigned char *pixels = screen + y * PITCH + x * (BPP >> 3);
 	SDL_UpdateTexture(sdlTexture, &r, pixels, PITCH);
 
@@ -276,9 +316,8 @@ static void sdl_draw(int x, int y, int width, int height)
 	SDL_RenderClear(sdlRenderer);
 	SDL_RenderCopy(sdlRenderer, sdlTexture, NULL, NULL);
 	SDL_RenderPresent(sdlRenderer);
-	changed = 0;
+	//changed = 0;
 }
-
 
 // Called periodically from the main loop
 
@@ -286,7 +325,26 @@ int con_proc ()
 	{
 	int err = 0;
 
-	if (changed) sdl_draw (0, 0, 0, 0);
+	if (vid_maxx >= 0 || vid_maxy >= 0)
+		{
+		// draw text bitmaps from adaptor RAM
+		draw_video_ram (vid_minx, vid_miny, vid_maxx+1, vid_maxy+1);
+
+		// draw cursor
+		int pos = (crtc_curhi << 8) | crtc_curlo;
+		int y = pos / COLS;
+		int x = pos % COLS;
+		sdl_drawbitmap ('_', x * CHAR_WIDTH, y * CHAR_HEIGHT);
+		update_dirty_region (x, y);
+
+		// update SDL
+		sdl_draw (vid_minx * CHAR_WIDTH, vid_miny * CHAR_HEIGHT,
+			(vid_maxx-vid_minx+1) * CHAR_WIDTH, (vid_maxy-vid_miny+1) * CHAR_HEIGHT);
+
+		// reset but redraw previous cursor location contents
+		reset_dirty_region ();
+		update_dirty_region (x, y);
+		}
 
 	SDL_Event event;
 
