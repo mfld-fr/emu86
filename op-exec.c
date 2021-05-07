@@ -576,7 +576,7 @@ static word_t alu_calc_2 (word_t op, byte_t w, word_t a, word_t b)
 	flag_set (FLAG_CF, cf);
 	flag_set (FLAG_OF, of);
 
-	flag_set (FLAG_ZF, r ? 0 : 1);
+	flag_set (FLAG_ZF, r & (w ? 0xFFFF : 0x00FF) ? 0 : 1);
 	flag_set (FLAG_SF, (r & m) ? 1 : 0);
 
 	return r;
@@ -1745,7 +1745,7 @@ int op_exec (op_desc_t * op_desc)
 
 		if (!hand)
 			{
-			printf ("error: no handler for op %hxh\n", id);
+			printf ("error: no handler for op %hXh\n", id);
 			break;
 			}
 

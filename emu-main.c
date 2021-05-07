@@ -107,6 +107,12 @@ static int debug_proc ()
 
 	while (1)
 		{
+		if (_flag_prompt)
+			{
+			regs_print ();
+			putchar ('\n');
+			}
+
 		if (_flag_trace)
 			{
 			// Print next instruction before execution
@@ -541,7 +547,7 @@ int command_line (int argc, char * argv [])
 		_flag_prompt = 1;
 		}
 
-	if (opt == '?' || optind != argc)
+	if (opt == '?')
 		{
 		usage (argv [0]);
 		err = -1;
