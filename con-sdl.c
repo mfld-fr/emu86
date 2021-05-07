@@ -324,6 +324,7 @@ static void sdl_draw(int x, int y, int width, int height)
 int con_proc ()
 	{
 	int err = 0;
+	int lastx = -1, lasty;
 
 	if (vid_maxx >= 0 || vid_maxy >= 0)
 		{
@@ -336,6 +337,7 @@ int con_proc ()
 		int x = pos % COLS;
 		sdl_drawbitmap ('_', x * CHAR_WIDTH, y * CHAR_HEIGHT);
 		update_dirty_region (x, y);
+		lastx = x; lasty = y;
 
 		// update SDL
 		sdl_draw (vid_minx * CHAR_WIDTH, vid_miny * CHAR_HEIGHT,
@@ -343,7 +345,8 @@ int con_proc ()
 
 		// reset but redraw previous cursor location contents
 		reset_dirty_region ();
-		update_dirty_region (x, y);
+		if (lastx != x || lasty != y)
+			update_dirty_region (x, y);
 		}
 
 	SDL_Event event;
