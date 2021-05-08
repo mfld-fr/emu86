@@ -325,6 +325,7 @@ static int int_13h ()
 	switch (ah)
 		{
 		case 0x00:  // reset drive
+			err = 0;
 			break;
 
 		case 0x02:  // read disk
@@ -381,11 +382,11 @@ static int int_13h ()
 
 		default:
 			printf ("fatal: INT 13h: AH=%hxh not implemented\n", ah);
-			assert (0);
+			return err;
 		}
 
 	flag_set (FLAG_CF, err? 1: 0);
-	return err;
+	return 0;
 	}
 
 
