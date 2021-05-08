@@ -7,7 +7,6 @@
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
-#include <assert.h>
 #include <sys/stat.h>
 
 #include "emu-mem-io.h"
@@ -141,7 +140,7 @@ static int int_10h ()
 		notimp:
 			fflush(stdout);
 			printf ("fatal: INT 10h: AH=%hxh not implemented\n", ah);
-			assert (0);
+			return -1;
 		}
 
 	return 0;
@@ -498,7 +497,7 @@ static int int_17h ()
 		{
 		default:
 			printf ("fatal: INT 17h: AH=%hxh not implemented\n", ah);
-			assert (0);
+			return -1;
 		}
 
 	return 0;
@@ -539,7 +538,7 @@ static int int_1Ah ()
 
 		default:
 			printf ("fatal: INT 1Ah: AH=%hxh not implemented\n", ah);
-			assert (0);
+			return -1;
 		}
 
 	return 0;
