@@ -25,7 +25,7 @@ PLATFORM=terminal
 #CONSOLE=none
 CONSOLE=stdio
 #CONSOLE=pty
-CONSOLE=sdl
+#CONSOLE=sdl
 
 # Serial backend
 # none:  no serial backend
