@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <string.h>
 #include <fcntl.h>
 #include <assert.h>
 #include <sys/stat.h>
@@ -13,6 +14,7 @@
 #include "emu-proc.h"
 #include "emu-con.h"
 #include "emu-int.h"
+#include "mem-io-elks.h"
 
 extern int info_level;
 
@@ -655,4 +657,12 @@ void rom_init (void)
 	mem_write_byte (0xFFFF0, 0xEA,   1);  // JMPF
 	mem_write_word (0xFFFF1, 0x0000, 1);
 	mem_write_word (0xFFFF3, 0xF000, 1);
+
+	// BIOS Data Area (BDA) setup for EGA/MDA adaptors
+
+	memset (mem_stat+BDA_BASE, 0x00, 256);
+	*(byte_t *) (mem_stat+BDA_BASE+0x49) =  3; 				// video mode (7=MDA)
+	*(byte_t *) (mem_stat+BDA_BASE+0x4a) =  VID_COLS;		// console width
+	*(word_t *) (mem_stat+BDA_BASE+0x4c) =  VID_PAGE_SIZE;	// page size
+	*(word_t *) (mem_stat+BDA_BASE+0x63) =  CRTC_CTRL_PORT;	// 6845 CRTC
 	}

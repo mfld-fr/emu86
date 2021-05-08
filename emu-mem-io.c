@@ -5,11 +5,10 @@
 
 #include "emu-mem-io.h"
 
-static byte_t mem_stat [MEM_MAX];
+byte_t mem_stat [MEM_MAX];
 
 byte_t _break_data_flag = 0;
 addr_t _break_data_addr = 0x100000;
-
 
 // Memory access
 
@@ -41,40 +40,6 @@ word_t mem_read_word (addr_t a)
 	return *p;
 	}
 
-
-void mem_write_byte (addr_t a, byte_t b, byte_t init)
-	{
-	assert (a < MEM_MAX);
-
-	// Protect ROM
-
-	if (a >= ROM_BASE && !init)
-		{
-		printf ("warning: writing byte into ROM @ %lxh\n", a);
-		}
-	else
-		{
-		byte_t * p = mem_get_addr (a);
-		*p = b;
-		}
-	}
-
-void mem_write_word (addr_t a, word_t w, byte_t init)
-	{
-	assert (a < MEM_MAX - 1);
-
-	// Protect ROM
-
-	if (a >= (ROM_BASE - 1) && !init)
-		{
-		printf ("warning: writing word into ROM @ %lxh\n", a);
-		}
-	else
-		{
-		word_t * p = (word_t *) mem_get_addr (a);
-		*p = w;
-		}
-	}
 
 //-------------------------------------------------------------------------------
 
