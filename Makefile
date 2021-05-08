@@ -100,6 +100,7 @@ CFLAGS += -DELKS
 endif
 
 EMU86_OBJS += \
+	mem-$(TARGET).o \
 	io-$(TARGET).o \
 	int-$(TARGET).o \
 	timer-$(TARGET).o \
