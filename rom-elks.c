@@ -649,5 +649,5 @@ void rom_init (void)
 	mem_write_byte (BDA_BASE+0x49, 3, 1); 			// video mode (7=MDA)
 	mem_write_byte (BDA_BASE+0x4a, VID_COLS, 1);	// console width
 	mem_write_word (BDA_BASE+0x4c, VID_PAGE_SIZE, 1); // page size
-	mem_write_word (BDA_BASE+0x63, CRTC_IOBASE, 1);	// 6845 CRTC base register
+	mem_write_word (BDA_BASE+0x63, CRTC_CTRL_PORT, 1);	// 6845 CRTC
 	}

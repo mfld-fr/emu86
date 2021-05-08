@@ -6,6 +6,7 @@
 #include "emu-timer.h"
 
 #include "int-elks.h"
+#include "mem-io-elks.h"
 
 #define TIMER_MAX 3000
 
@@ -28,10 +29,13 @@ void timer_proc ()
 
 void timer_io_write (word_t p, byte_t b)
 	{
-	if (p == 0x43) {
-		timer_enabled = 0;
+	if (p == TIMER_CTRL_PORT)
+		{
 		if (b == 0x34)
 			timer_enabled = 1;  // timer 0, binary count, mode 2
+		if (b == 0x30)
+			timer_enabled = 0;	// timer 0, binary count, mode 0
+		//if (b == 0xB6)		// timer 2 for PC speaker
 		}
 	}
 

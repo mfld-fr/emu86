@@ -40,19 +40,18 @@ int io_write_byte (word_t p, byte_t b)
 			int_io_write (p - 0x20, b);
 			break;
 
-		case 0x43: // 8253 timer
-			// FIXME: base I/O port of timer ?
+		case TIMER_CTRL_PORT:		// 8253/8254 timer
 			timer_io_write (p, b);
 			break;
 
 		case 0x80:					// I/O delay
 			break;
 
-		case CRTC_IOBASE:			// 6845 CRTC
+		case CRTC_CTRL_PORT:		// 6845 CRTC
 			crtc_lastcommand = b;
 			break;
 
-		case CRTC_IOBASE+1:
+		case CRTC_DATA_PORT:
 			if (crtc_lastcommand == 0x0E)
 				crtc_curhi = b;
 			else if (crtc_lastcommand == 0x0F)

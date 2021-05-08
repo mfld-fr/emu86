@@ -325,29 +325,38 @@ static void sdl_draw(int x, int y, int width, int height)
 int con_proc ()
 	{
 	int err = 0;
-	int lastx = -1, lasty;
+	static int lastx = 0, lasty = 0, needscursor = 0;
 
 	if (vid_maxx >= 0 || vid_maxy >= 0)
 		{
 		// draw text bitmaps from adaptor RAM
 		draw_video_ram (vid_minx, vid_miny, vid_maxx+1, vid_maxy+1);
 
-		// draw cursor
-		int pos = (crtc_curhi << 8) | crtc_curlo;
-		int y = pos / COLS;
-		int x = pos % COLS;
-		sdl_drawbitmap ('_', x * CHAR_WIDTH, y * CHAR_HEIGHT);
-		update_dirty_region (x, y);
-		lastx = x; lasty = y;
-
 		// update SDL
 		sdl_draw (vid_minx * CHAR_WIDTH, vid_miny * CHAR_HEIGHT,
 			(vid_maxx-vid_minx+1) * CHAR_WIDTH, (vid_maxy-vid_miny+1) * CHAR_HEIGHT);
 
-		// reset but redraw previous cursor location contents
 		reset_dirty_region ();
-		if (lastx != x || lasty != y)
-			update_dirty_region (x, y);
+		needscursor = 1;
+		}
+		else
+		{
+		// draw cursor
+		int pos = (crtc_curhi << 8) | crtc_curlo;
+		int y = pos / COLS;
+		int x = pos % COLS;
+		if (lastx != x || lasty != y || needscursor)
+			{
+			// remove last cursor
+			draw_video_ram (lastx, lasty, lastx+1, lasty+1);
+			sdl_draw (lastx * CHAR_WIDTH, lasty * CHAR_HEIGHT, CHAR_WIDTH, CHAR_HEIGHT);
+
+			// draw current cursor
+			sdl_drawbitmap ('_', x * CHAR_WIDTH, y * CHAR_HEIGHT);
+			sdl_draw (x * CHAR_WIDTH, y * CHAR_HEIGHT, CHAR_WIDTH, CHAR_HEIGHT);
+			lastx = x; lasty = y;
+			needscursor = 0;
+			}
 		}
 
 	SDL_Event event;
@@ -409,8 +418,6 @@ int con_init(void)
 	SDL_RenderSetScale(sdlRenderer, sdlZoom, sdlZoom);
 
   	//SDL_ShowCursor(SDL_DISABLE);	/* hide SDL cursor*/
-
-	//SDL_PumpEvents();	/* SDL bug: must call before output or black window overwrite*/
 
 	screen = malloc(HEIGHT * PITCH);
 	if (!screen) {

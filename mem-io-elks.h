@@ -15,14 +15,18 @@
 
 // 6845 CRT Controller
 
-#define CRTC_IOBASE		0x03D4		// color
-//#define CRTC_IOBASE	0x03B4		// mono (MDA)
+#define CRTC_CTRL_PORT	0x03D4		// color
+//#define CRTC_CTRL_PORT 0x03B4		// mono (MDA)
+#define CRTC_DATA_PORT	(CRTC_CTRL_PORT+1)
 
 // BIOS Data Area
 
 #define BDA_BASE		0x00400
 
-extern byte_t mem_stat [MEM_MAX];
+// 8253/8254 Timer
+#define TIMER_DATA_PORT	0x42
+#define TIMER_CTRL_PORT	(TIMER_DATA_PORT+1)
+
 extern byte_t crtc_curhi, crtc_curlo;
 extern int vid_minx, vid_miny;
 extern int vid_maxx, vid_maxy;

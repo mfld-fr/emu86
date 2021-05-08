@@ -18,6 +18,8 @@ extern addr_t _break_data_addr;
 
 // Memory operations
 
+extern byte_t mem_stat [MEM_MAX];
+
 byte_t * mem_get_addr (addr_t a);
 
 byte_t mem_read_byte (addr_t a);
