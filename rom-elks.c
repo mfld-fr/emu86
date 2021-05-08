@@ -2,13 +2,6 @@
 // EMU86 - ELKS ROM stub (BIOS)
 //------------------------------------------------------------------------------
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-
 #include "emu-mem-io.h"
 #include "emu-proc.h"
 #include "emu-con.h"
@@ -16,13 +9,18 @@
 #include "mem-io-elks.h"
 #include "rom-bios.h"
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+
 
 extern int info_level;
 
 
 // BIOS video services
-
-#define BDA_VIDEO_MODE 0x0449
 
 static int int_10h ()
 	{
@@ -31,6 +29,7 @@ static int int_10h ()
 	byte_t r;  // row
 	byte_t c;  // column
 	byte_t r2, c2, n, at;
+
 	byte_t ah = reg8_get (REG_AH);
 
 	switch (ah)
@@ -72,15 +71,14 @@ static int int_10h ()
 		// Write character and attribute at current cursor position
 
 		case 0x09:
-			at = reg8_get (REG_BL); // attribute
-			con_put_char (reg8_get (REG_AL), at);  // CX count ignored
+			con_put_char (reg8_get (REG_AL), reg8_get (REG_BL));  // CX count ignored
 			break;
 
 		// Write as teletype to current page
-		// Page ignored in video mode 7
+		// Page ignored
 
 		case 0x0E:
-			con_put_char (reg8_get (REG_AL), ATTR_NORMAL);
+			con_put_char (reg8_get (REG_AL), ATTR_DEFAULT);
 			break;
 
 		// Get video mode

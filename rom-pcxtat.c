@@ -2,13 +2,6 @@
 // EMU86 - PC/XT/AT ROM stub (BIOS)
 //------------------------------------------------------------------------------
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-
 #include "emu-mem-io.h"
 #include "emu-proc.h"
 #include "emu-con.h"
@@ -16,22 +9,18 @@
 #include "mem-io-elks.h"
 #include "rom-bios.h"
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+
+
 extern int info_level;
 
 
 // BIOS video services
-
-#define FG_WHITE 0x07
-#define BG_BLACK 0x00
-
-
-static byte_t num_hex (byte_t n)
-	{
-	byte_t h = n + '0';
-	if (h > '9') h += 'A' - '9';
-	return h;
-	}
-
 
 static int int_10h ()
 	{
@@ -40,7 +29,6 @@ static int int_10h ()
 	byte_t ah = reg8_get (REG_AH);
 
 	byte_t al;
-	byte_t bl = 0;
 
 	word_t es;
 	word_t bp;
@@ -63,11 +51,6 @@ static int int_10h ()
 				err = -1;
 				}
 
-			// No MDA character attribute support in SDL console
-
-			if (al == 0x07)
-				puts("\nwarning: INT 10h AH=00h: unsupported MDA character attributes");
-
 			mem_stat [BDA_VIDEO_MODE] = al;
 			break;
 
@@ -88,7 +71,7 @@ static int int_10h ()
 		// Get cursor position
 
 		case 0x03:
-			con_pos_get(&r, &c);
+			con_pos_get (&r, &c);
 			reg16_set (REG_DX, (r << 8) | c);
 			reg16_set (REG_CX, 0);  // null cursor
 			break;
@@ -114,20 +97,19 @@ static int int_10h ()
 		// Read character at current cursor position
 
 		case 0x08:
-			reg16_set (REG_AX, FG_WHITE | BG_BLACK);  // dummy character & attribute
+			reg16_set (REG_AX, ATTR_DEFAULT);  // dummy character & attribute
 			break;
 
-		// Write character at current cursor position
-		// Prevent black on black
+		// Write character & attribute at current cursor position
 
 		case 0x09:
-			if (mem_stat [BDA_VIDEO_MODE] == 3)
-				bl = reg8_get (REG_BL);
+			con_put_char (reg8_get (REG_AL), reg8_get (REG_BL));
+			break;
 
-			// no break
+		// Write character only at current cursor position
 
 		case 0x0A:
-			con_put_char (reg8_get (REG_AL), bl ? bl : (FG_WHITE | BG_BLACK));
+			con_put_char (reg8_get (REG_AL), ATTR_DEFAULT);
 			break;
 
 		// Set color palette
@@ -140,7 +122,7 @@ static int int_10h ()
 		// Page ignored
 
 		case 0x0E:
-			con_put_char (reg8_get (REG_AL), FG_WHITE | BG_BLACK);
+			con_put_char (reg8_get (REG_AL), ATTR_DEFAULT);
 			break;
 
 		// Get video mode
@@ -177,20 +159,8 @@ static int int_10h ()
 			a = addr_seg_off (es, bp);
 
 			while (cx--)
-				{
-				con_put_char (mem_read_byte (a++), FG_WHITE | BG_BLACK);
-				}
+				con_put_char (mem_read_byte (a++), ATTR_DEFAULT);
 
-			break;
-
-		// Write byte as hexadecimal
-
-		case 0x1D:
-			al = reg8_get (REG_AL);
-			c = num_hex (al >> 4);
-			con_put_char (c, FG_WHITE | BG_BLACK);
-			c = num_hex (al & 0x0F);
-			con_put_char (c, FG_WHITE | BG_BLACK);
 			break;
 
 		default:
