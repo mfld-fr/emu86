@@ -2,6 +2,7 @@
  * EMU86 SDL2 Console
  *	Supports ELKS Headless Console (streaming data)
  *	Supports ELKS BIOS Console (BIOS cursor, scroll etc)
+ *	Supports ELKS Direct Console (emulated video RAM)
  *	Also used by Emscripten platform for emulator console output in browser
  *
  * Dec 2020 Greg Haerr <greg@censoft.com>
@@ -34,7 +35,6 @@ static SDL_Renderer *sdlRenderer;
 static SDL_Texture *sdlTexture;
 static float sdlZoom = 1.0;
 static unsigned char *screen;
-//static int changed;
 static int curx, cury;
 
 
@@ -97,14 +97,6 @@ static void draw_video_ram(int sx, int sy, int ex, int ey)
 
 static void cursoron(void)
 {
-#if 0
-	/* no simulated cursor in first column because of CR issue*/
-	if (curx != 0)
-	{
-		sdl_drawbitmap('_', curx * CHAR_WIDTH, cury * CHAR_HEIGHT);
-		changed = 1;
-	}
-#endif
 	mem_stat[BDA_BASE+0x50] = curx;
 	mem_stat[BDA_BASE+0x51] = cury;
 	int pos = cury * COLS + curx;
@@ -114,25 +106,12 @@ static void cursoron(void)
 
 static void cursoroff(void)
 {
-#if 0
-	if (curx != 0)
-	{
-		sdl_drawbitmap(' ', curx * CHAR_WIDTH, cury * CHAR_HEIGHT);
-		changed = 1;
-	}
-#endif
 }
 
 
+// scroll adapter RAM
 static void scrollup(void)
 {
-#if 0
-	memcpy(screen, screen + CHAR_HEIGHT * PITCH, (LINES-1) * CHAR_HEIGHT * PITCH);
-	memset(screen + (LINES-1) * CHAR_HEIGHT * PITCH, 0, CHAR_HEIGHT * PITCH);
-	changed = 1;
-#endif
-	// scroll adapter RAM
-
 	int pitch = COLS * 2;
 	byte_t *vid = mem_stat + VID_BASE;
 	memcpy(vid, vid + pitch, (LINES-1) * pitch);
@@ -145,7 +124,6 @@ static void scrollup(void)
 /* output character at cursor location*/
 void sdl_textout(unsigned char c)
 {
-	//changed = 1;
 	cursoroff();
 
 	switch (c) {
@@ -155,7 +133,6 @@ void sdl_textout(unsigned char c)
 	case '\n':  goto scroll;
 	}
 
-	//sdl_drawbitmap(c, curx * CHAR_WIDTH, cury * CHAR_HEIGHT);
 	mem_stat[VID_BASE + (cury * COLS + curx) * 2] = c;
 	update_dirty_region (curx, cury);
 
@@ -317,7 +294,6 @@ static void sdl_draw(int x, int y, int width, int height)
 	SDL_RenderClear(sdlRenderer);
 	SDL_RenderCopy(sdlRenderer, sdlTexture, NULL, NULL);
 	SDL_RenderPresent(sdlRenderer);
-	//changed = 0;
 }
 
 // Called periodically from the main loop
@@ -416,8 +392,6 @@ int con_init(void)
 	/* setup zoom*/
 	SDL_RenderSetLogicalSize(sdlRenderer, WIDTH, HEIGHT);
 	SDL_RenderSetScale(sdlRenderer, sdlZoom, sdlZoom);
-
-  	//SDL_ShowCursor(SDL_DISABLE);	/* hide SDL cursor*/
 
 	screen = malloc(HEIGHT * PITCH);
 	if (!screen) {
