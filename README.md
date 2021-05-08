@@ -54,13 +54,15 @@ also known as 'Linux 8086', in a minimal PC/XT/AT configuration.
 It is also able to emulate the Advantech SNMP-1000, an SBC based on the R8810 MCU,
 that is a 80188 clone but with with its specific interrupt controller, timer and serial port.
 
+And last but not least, it is now able to boot MSDOS & FreeDOS (experimental).
+
 Any addition to support more embbeded systems based on IA16 is welcome.
 
 
 ## CONFIGURE & BUILD
 
 First configure EMU86 by editing `config.mk`:
-* TARGET: emulated target / system (ELKS for minimal PC)
+* TARGET: emulated target / system
 * PLATFORM: emulation on host or in web browser (experimental)
 * CONSOLE: console backend for PC target
 * SERIAL: serial backend

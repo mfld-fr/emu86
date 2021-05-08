@@ -109,22 +109,10 @@ static int debug_proc ()
 		{
 		if (_flag_prompt)
 			{
+			putchar ('\n');
 			regs_print ();
 			putchar ('\n');
-			}
 
-		if (_flag_trace)
-			{
-			// Print next instruction before execution
-
-			printf ("%.4hX:%.4hX  ", seg_get (SEG_CS), reg16_get (REG_IP));
-			print_column (op_code_str, 3 * OPCODE_MAX + 1);
-			print_op (&_op_desc);
-			putchar ('\n');
-			}
-
-		if (_flag_prompt)
-			{
 			// Get user command
 			// FIXME: use safer input function
 
@@ -165,6 +153,7 @@ static int debug_proc ()
 					_break_step_over_code_addr = addr_seg_off (op_code_seg, op_code_off);
 					_flag_trace = 0;
 					_flag_prompt = 0;
+					_flag_exec = 1;
 					break;
 
 				// Trace one step
@@ -181,6 +170,7 @@ static int debug_proc ()
 				case 'c':
 					_flag_trace = 1;
 					_flag_prompt = 0;
+					_flag_exec = 1;
 					break;
 
 				// Go (keep breakpoints)
@@ -188,6 +178,7 @@ static int debug_proc ()
 				case 'g':
 					_flag_trace = 0;
 					_flag_prompt = 0;
+					_flag_exec = 1;
 					break;
 
 				// Quit
@@ -307,6 +298,19 @@ static void cpu_proc (void)
 		op_code_off = next_off;
 		}
 
+	// Trace instruction before debugging & execution
+	// TODO: trace filter as option
+
+	if (_flag_trace && (code_stat [addr_seg_off (op_code_seg, op_code_off)] == 0))
+		{
+		printf ("%.4hX:%.4hX  ", seg_get (SEG_CS), reg16_get (REG_IP));
+		print_column (op_code_str, 3 * OPCODE_MAX + 1);
+		print_op (&_op_desc);
+		putchar ('\n');
+
+		code_stat [addr_seg_off (op_code_seg, op_code_off)] = 1;
+		}
+
 	// Debug procedure
 	// After decoding the next instruction
 	// Before executing that instruction
@@ -324,7 +328,7 @@ static void cpu_proc (void)
 		err = op_exec (&_op_desc);
 		if (err)
 			{
-			puts (err < 0 ? "error: execute operation" : "warning: paused (HLT)");
+			puts (err < 0 ? "\nerror: execute operation" : "\nwarning: paused (HLT)");
 			_flag_trace = 1;
 			_flag_prompt = 1;
 			if (err < 0) reg16_set (REG_IP, last_off);

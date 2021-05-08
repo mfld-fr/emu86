@@ -17,7 +17,7 @@ void serial_term ()
 
 int serial_poll ()
 	{
-	return 0;
+	return 0;  // no char
 	}
 
 int serial_recv (byte_t * c)

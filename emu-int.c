@@ -65,7 +65,7 @@ void int_line_set (int line, int stat)
 
 int int_ack (byte_t * vect)
 	{
-	int err;
+	int err = 0;
 
 	while (1) {
 		// Get requested of top priority
@@ -81,15 +81,20 @@ int int_ack (byte_t * vect)
 				}
 			}
 
-		// TODO: manage spurious request
-		assert (req >= 0);
+		// TODO: manage spurious ACK
+
+		if (req < 0)
+			{
+			printf ("\nerror: spurious ACK\n");
+			err = -1;
+			break;
+			}
 
 		if (_int_mode [req] == INT_EDGE) _int_req [req] = 0;
 		*vect = _int_vect [req];
 		_int_serv [req] = 1;
 
 		int_proc ();
-		err = 0;
 		break;
 		}
 
@@ -101,12 +106,15 @@ int int_ack (byte_t * vect)
 
 void int_end_line (int line)
 	{
-	// TODO: manage spurious EOI
-	assert (_int_serv [line] == 1);
-
-	_int_serv [line] = 0;
-
-	int_proc ();
+	if (_int_serv [line] == 0)
+		{
+		printf ("\nwarning: spurious EOI: line=%i\n", line);
+		}
+	else
+		{
+		_int_serv [line] = 0;
+		int_proc ();
+		}
 	}
 
 // End of interrupt servicing (EOI)

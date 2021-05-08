@@ -9,27 +9,32 @@ on:
       - master
 
 jobs:
-  build:
+  default:
+    runs-on: ubuntu-latest
 
+    steps:
+    - uses: actions/checkout@v2
+    - name: make
+      run: make
+
+  elks:
     runs-on: ubuntu-latest
 
     steps:
     - name: setup
       run: sudo apt install libsdl2-dev
     - uses: actions/checkout@v2
-    - name: make_def
-      run: make
-    - name: clean_def
-      run: make clean
-    - name: conf_elks
+    - name: config
       run: cp config-elks.mk config.mk
-    - name: make_elks
+    - name: make
       run: make
-    - name: clean_elks
-      run: make clean
-    - name: conf_advtech
+
+  advtech:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: config
       run: cp config-advtech.mk config.mk
-    - name: make_advtech
+    - name: make
       run: make
-    - name: clean_advtech
-      run: make clean

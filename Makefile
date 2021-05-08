@@ -2,7 +2,7 @@
 
 include config.mk
 
-CFLAGS = -g -Wall
+CFLAGS = -g -Wall -Werror
 PREFIX = /usr/local
 
 # EMU86 main program
@@ -96,7 +96,17 @@ endif
 # Target selection
 
 ifeq ($(TARGET), elks)
-CFLAGS += -DELKS
+	CFLAGS += -DELKS
+	EMU86_OBJS += rom-elks.o
+endif
+
+ifeq ($(TARGET), pcxtat)
+	EMU86_OBJS += rom-pcxtat.o
+	TARGET = elks
+endif
+
+ifeq ($(TARGET), advtech)
+	EMU86_OBJS += rom-advtech.o
 endif
 
 EMU86_OBJS += \
@@ -105,7 +115,6 @@ EMU86_OBJS += \
 	int-$(TARGET).o \
 	timer-$(TARGET).o \
 	serial-$(TARGET).o \
-	rom-$(TARGET).o \
 	# end of list
 
 

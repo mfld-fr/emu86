@@ -188,7 +188,7 @@ static int class_off (byte_t flags, op_desc_t * op)
 	}
 
 
-static int class_off_seg (byte_t flags, op_desc_t * op)
+static int class_off_seg (byte_t __attribute__((unused)) flags, op_desc_t * op)
 	{
 	op->var_count = 1;
 
@@ -204,7 +204,7 @@ static int class_off_seg (byte_t flags, op_desc_t * op)
 	}
 
 
-static int class_in_out (byte_t flags, op_desc_t * op)
+static int class_in_out (byte_t __attribute__((unused)) flags, op_desc_t * op)
 	{
 	op->var_count = 2;
 
@@ -278,7 +278,7 @@ static int class_reg (byte_t flags, op_desc_t * op)
 	}
 
 
-static int class_seg (byte_t flags, op_desc_t * op)
+static int class_seg (byte_t __attribute__((unused)) flags, op_desc_t * op)
 	{
 	op->var_count = 1;
 
@@ -292,7 +292,7 @@ static int class_seg (byte_t flags, op_desc_t * op)
 	}
 
 
-static int class_acc_w_imm (byte_t flags, op_desc_t * op)
+static int class_acc_w_imm (byte_t __attribute__((unused)) flags, op_desc_t * op)
 	{
 	op->var_count = 2;
 
@@ -320,7 +320,7 @@ static int class_acc_w_imm (byte_t flags, op_desc_t * op)
 	}
 
 
-static int class_acc_d_w_addr (byte_t flags, op_desc_t * op)
+static int class_acc_d_w_addr (byte_t __attribute__((unused)) flags, op_desc_t * op)
 	{
 	op->var_count = 2;
 
@@ -473,7 +473,7 @@ static int class_w_mod_rm_imm (byte_t flags, op_desc_t * op)
 	}
 
 
-static int class_w_mod_rm_count (byte_t flags, op_desc_t * op)
+static int class_w_mod_rm_count (byte_t __attribute__((unused)) flags, op_desc_t * op)
 	{
 	op->var_count = 2;
 
@@ -683,31 +683,45 @@ static int class_1_40h (byte_t code, op_desc_t * op_desc)
 			err = class_reg (0, op_desc);
 			break;
 
+		// Unknown opcodes for 8086
+		// Only for 80186
+
 		case 0x20:
 			if (code & 0x0E)
 				{
-				if (code == 0x6A) {
-					OP_ID = OP_PUSH;
-					err = class_imm (CF_1, op_desc);
-					break;
-					}
-				else if (code == 0x68) {
+				if (code == 0x68) {
 					OP_ID = OP_PUSH;
 					err = class_imm (CF_2, op_desc);
 					break;
 					}
 
-				// Unknown opcodes for 8086
+				else if (code == 0x6A) {
+					OP_ID = OP_PUSH;
+					err = class_imm (CF_1, op_desc);
+					break;
+					}
+
 				// TODO: complete with 80186 opcodes
+				// 0x62: BOUND
+				// 0x69: IMUL imm16
+				// 0x6B: IMUL imm8
+				// 0x6C: INS p8
+				// 0x6D: INS p16
+				// 0x6E: OUTS p8
+				// 0x6F: OUTS p16
+
 				err = -1;
 				break;
 				}
 
 			// PUSHA / POPA
+			// 0x60h / 0x61h
 
 			OP_ID = OP_STACK2 + op_desc->w2;
 			err = 0;
 			break;
+
+		// Conditional jumps (0x70-0x7F)
 
 		case 0x30:
 			OP_ID = OP_JUMP + (code & 0x0F);

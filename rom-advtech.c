@@ -15,9 +15,12 @@
 
 
 // BIOS time services
+// Hook to avoid using the RTC chip (not emulated yet)
 
 static int int_1Ah ()
 	{
+	int err = 0;
+
 	byte_t ah = reg8_get (REG_AH);
 	switch (ah)
 		{
@@ -30,11 +33,13 @@ static int int_1Ah ()
 			break;
 
 		default:
-			printf ("fatal: INT 1Ah: AH=%hxh not implemented\n", ah);
-			assert (0);
+			printf ("error: INT 1Ah: AH=%hXh not implemented\n", ah);
+			err = -1;
+			break;
+
 		}
 
-	return 0;
+	return err;
 	}
 
 
@@ -52,7 +57,7 @@ static int int_60h ()
 			break;
 
 		default:
-			printf ("fatal: INT 60h: AH=%hxh not implemented\n", ah);
+			printf ("fatal: INT 60h: AH=%hXh not implemented\n", ah);
 			assert (0);
 		}
 
@@ -100,7 +105,7 @@ static int int_D0h ()
 			break;
 
 		default:
-			printf ("fatal: INT D0h: AH=%hxh not implemented\n", ah);
+			printf ("fatal: INT D0h: AH=%hXh not implemented\n", ah);
 			assert (0);
 		}
 
@@ -123,7 +128,7 @@ static int int_D2h ()
 			break;
 
 		default:
-			printf ("fatal: INT D2h: AH=%hxh not implemented\n", ah);
+			printf ("fatal: INT D2h: AH=%hXh not implemented\n", ah);
 			assert (0);
 
 		}
@@ -152,7 +157,7 @@ void rom_init (void)
 
 int rom_image_load (char * path)
 	{
-	return 1;	// error
+	return 1;  // error
 	}
 
 void rom_term (void)
