@@ -44,6 +44,16 @@ static int int_10h ()
 //printf("INT 10h fn %x\n", ah);
 	switch (ah)
 		{
+		// Set video mode
+		case 0x00:
+			// dummy for now
+			break;
+
+		// Set cursor type
+		case 0x01:
+			// dummy for now
+			break;
+
 		// Set cursor position
 
 		case 0x02:
@@ -69,6 +79,12 @@ static int int_10h ()
 
 		case 0x06:
 			con_scrollup();			// ignores row/col numbers
+			break;
+
+		// Scroll down
+
+		case 0x07:
+			//con_scrolldown();
 			break;
 
 		// Write character at current cursor position
@@ -294,7 +310,7 @@ static int readwrite_sector (byte_t drive, int wflag, unsigned long lba,
 		break;
 		}
 
-	return err;
+	return 0;
 	}
 
 
@@ -311,6 +327,7 @@ static int int_13h ()
 	switch (ah)
 		{
 		case 0x00:  // reset drive
+			err = 0;
 			break;
 
 		case 0x02:  // read disk
@@ -349,6 +366,11 @@ static int int_13h ()
 				}
 			break;
 
+		case 0x04:
+			reg8_set(REG_AH, 0);	// disk status
+			err = 0;
+			break;
+
 		case 0x08:  // get drive parms
 			d = reg8_get (REG_DL);
 			dp = find_drive (d);
@@ -365,6 +387,10 @@ static int int_13h ()
 			err = 0;
 			break;
 
+		case 0x15: // read dasd type
+			// error out for now
+			break;
+
 		default:
 			printf ("fatal: INT 13h: AH=%hxh not implemented\n", ah);
 			assert (0);
@@ -373,6 +399,29 @@ static int int_13h ()
 	flag_set (FLAG_CF, err? 1: 0);
 	return 0;
 	}
+
+// BIOS async communication services
+
+static int int_14h ()
+	{
+	byte_t ah = reg8_get (REG_AH);
+	int err = -1;
+
+	switch (ah)
+		{
+		case 0x00:  // Initialize Serial Port Parameters
+			err = 0;
+			reg16_set(REG_AX, 0x0000); // dummy value
+			break;
+		default:
+			printf ("fatal: INT 14h: AH=%hxh not implemented\n", ah);
+			assert (0);
+		}
+
+	flag_set (FLAG_CF, err? 1: 0);
+	return 0;
+	}
+
 
 
 // BIOS misc services
@@ -396,6 +445,26 @@ static int int_15h ()
 
 // BIOS keyboard services
 
+// Reverse scancode table, so we have a scancode to return with the ASCII
+static const unsigned char scancodes[] = {
+	// NUL SOH   STX   ETX   EOT   ENQ   ACK   BEL    BS    HT    LF    VT    FF    CR    SO    SI
+	0x03, 0x1E, 0x30, 0x2E, 0x20, 0x12, 0x21, 0x22, 0x0E, 0x0F, 0x24, 0x25, 0x26, 0x1C, 0x31, 0x18,
+	// DLE DC1   DC2   DC3   DC4   NAK   SYN   ETB   CAN    EM   SUB   ESC    FS    GS    RS    US
+	0x19, 0x10, 0x13, 0x1F, 0x14, 0x16, 0x2F, 0x11, 0x2D, 0x15, 0x2C, 0x01, 0x2B, 0x1B, 0x07, 0x0C,
+	// SP    !     "     #     $     %     &     '     (     )     *     +     ,     -     .     /
+	0x39, 0x02, 0x28, 0x04, 0x05, 0x06, 0x08, 0x28, 0x0A, 0x0B, 0x09, 0x0D, 0x33, 0x0C, 0x34, 0x35,
+	// 0     1     2     3     4     5     6     7     8     9     :     ;     <     =     >     ?
+	0x0B, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x27, 0x27, 0x33, 0x0D, 0x34, 0x35,
+	// @     A     B     C     D     E     F     G     H     I     J     K     L     M     N     O
+	0x03, 0x1E, 0x30, 0x2E, 0x20, 0x12, 0x21, 0x22, 0x23, 0x17, 0x24, 0x25, 0x26, 0x32, 0x31, 0x18,
+	// P     Q     R     S     T     U     V     W     X     Y     Z     [     \     ]     ^     _
+	0x19, 0x10, 0x13, 0x1F, 0x14, 0x16, 0x2F, 0x11, 0x2D, 0x15, 0x2C, 0x1A, 0x2B, 0x1B, 0x07, 0x0C,
+	// `     a     b     c     d     e     f     g     h     i     j     k     l     m     n     o
+	0x29, 0x1E, 0x30, 0x2E, 0x20, 0x12, 0x21, 0x22, 0x23, 0x17, 0x24, 0x25, 0x26, 0x32, 0x31, 0x18,
+	// p     q     r     s     t     u     v     w     x     y     z     {     |     }     ~   DEL
+	0x19, 0x10, 0x13, 0x1F, 0x14, 0x16, 0x2F, 0x11, 0x2D, 0x15, 0x2C, 0x1A, 0x2B, 0x1B, 0x29, 0x53
+};
+
 static word_t key_prev = 0;
 
 static int int_16h ()
@@ -410,6 +479,7 @@ static int int_16h ()
 		// Normal keyboard read
 
 		case 0x00:
+		case 0x10:
 			if (key_prev)
 				{
 				reg8_set (REG_AL, (byte_t) key_prev);
@@ -422,8 +492,16 @@ static int int_16h ()
 
 				reg8_set (REG_AL, (byte_t) k);  // ASCII code
 				}
+				if (reg8_get(REG_AL) < 0x80) reg8_set (REG_AH, scancodes[reg8_get(REG_AL)]);
 
 			reg8_set (REG_AH, 0);  // No scan code
+			break;
+
+		// Read Keyboard flags
+
+		case 0x2:
+			reg8_set(REG_AL, 0);
+			err = 0;
 			break;
 
 		// Peek character
@@ -437,6 +515,8 @@ static int int_16h ()
 
 				reg8_set (REG_AL, (byte_t) key_prev);
 				reg8_set (REG_AH, 0);
+				if (key_prev < 0x80) reg8_set (REG_AH, scancodes[key_prev]);
+				
 				}
 			else
 				{
@@ -450,22 +530,12 @@ static int int_16h ()
 		case 0x03:
 			break;
 
-		// Extended keyboard read
-
-		case 0x10:
-			err = con_get_key (&k);
-			if (err) break;
-
-			reg8_set (REG_AL, (byte_t) k);  // ASCII code
-			reg8_set (REG_AH, 0);           // No scan code
-			break;
-
 		default:
 			printf ("fatal: INT 16h: AH=%hxh not implemented\n", ah);
 			assert (0);
 		}
 
-	return err;
+	return 0;
 	}
 
 
@@ -476,6 +546,12 @@ static int int_17h ()
 	byte_t ah = reg8_get (REG_AH);
 	switch (ah)
 		{
+		// Initialize Printer Port
+
+		case 0x1:
+			reg8_set(REG_AH, 0x0); // dummy value
+			break;
+
 		default:
 			printf ("fatal: INT 17h: AH=%hxh not implemented\n", ah);
 			assert (0);
@@ -507,6 +583,7 @@ static int int_FEh ()
 static int int_1Ah ()
 	{
 	byte_t ah = reg8_get (REG_AH);
+	int err = -1;
 	switch (ah)
 		{
 		// Get system time
@@ -515,6 +592,23 @@ static int int_1Ah ()
 			reg16_set (REG_CX, 0);  // stay on 0
 			reg16_set (REG_DX, 0);
 			reg8_set (REG_AL, 0);   // no day wrap
+			err = 0;
+			break;
+
+		case 0x2: // Read time from RTC
+			reg8_set(REG_CH, 0x12);	// hours (in BCD)
+			reg8_set(REG_CL, 0x12);	// minutes (in BCD)
+			reg8_set(REG_DH, 0x12);	// seconds (in BCD)
+			reg8_set(REG_DL, 0);	// no daylight savings time
+			err = 0;
+			break;
+
+		case 0x4: // Read date from RTC
+			reg8_set(REG_CH, 20);	// century (in BCD)
+			reg8_set(REG_CL, 0x12);	// year (in BCD)
+			reg8_set(REG_DH, 0x1);	// month (in BCD)
+			reg8_set(REG_DL, 0x12);	// day (in BCD)
+			err = 0;
 			break;
 
 		default:
@@ -522,6 +616,7 @@ static int int_1Ah ()
 			assert (0);
 		}
 
+	flag_set (FLAG_CF, err? 1: 0);
 	return 0;
 	}
 
@@ -533,6 +628,7 @@ int_num_hand_t _int_tab [] = {
 	{ 0x10, int_10h },
 	{ 0x12, int_12h },
 	{ 0x13, int_13h },  // BIOS disk services
+	{ 0x14, int_14h },
 	{ 0x15, int_15h },
 	{ 0x16, int_16h },
 	{ 0x17, int_17h },
