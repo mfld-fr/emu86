@@ -138,8 +138,7 @@ static int int_10h ()
 
 		default:
 		notimp:
-			fflush(stdout);
-			printf ("fatal: INT 10h: AH=%hxh not implemented\n", ah);
+			printf ("error: INT 10h: AH=%hxh not implemented\n", ah);
 			return -1;
 		}
 
@@ -380,7 +379,7 @@ static int int_13h ()
 			break;
 
 		default:
-			printf ("fatal: INT 13h: AH=%hxh not implemented\n", ah);
+			printf ("error: INT 13h: AH=%hxh not implemented\n", ah);
 			return err;
 		}
 
@@ -496,7 +495,7 @@ static int int_17h ()
 	switch (ah)
 		{
 		default:
-			printf ("fatal: INT 17h: AH=%hxh not implemented\n", ah);
+			printf ("error: INT 17h: AH=%hxh not implemented\n", ah);
 			return -1;
 		}
 
@@ -537,7 +536,7 @@ static int int_1Ah ()
 			break;
 
 		default:
-			printf ("fatal: INT 1Ah: AH=%hxh not implemented\n", ah);
+			printf ("error: INT 1Ah: AH=%hxh not implemented\n", ah);
 			return -1;
 		}
 
