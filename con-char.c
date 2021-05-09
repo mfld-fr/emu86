@@ -8,7 +8,7 @@
 
 int con_put_char (word_t c)
 	{
-	return char_send (c & 0xFF);
+	return char_send (c);
 	}
 
 

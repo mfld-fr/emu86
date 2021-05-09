@@ -137,7 +137,7 @@ void sdl_textout(word_t c)
 {
 	cursoroff();
 
-	switch (c & 0xFF) {
+	switch (c & ATTR_CHARMASK) {
 	case '\0':	return;
 	case '\b':	if (--curx <= 0) curx = 0; goto update;
 	case '\r':	curx = 0; goto update;
