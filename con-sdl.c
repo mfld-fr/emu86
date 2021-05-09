@@ -30,6 +30,13 @@ extern MWIMAGEBITS rom8x16_bits[];
 #define HEIGHT		(LINES * CHAR_HEIGHT)
 #define PITCH		(WIDTH * (BPP >> 3))
 
+/* display attributes*/
+#define ATTR_OR     0x10000		// OR w/pixels (cursor)
+#define ATTR_BLINK   0x8000
+#define ATTR_BGCOLOR 0x7000
+#define ATTR_BOLD    0x0800
+#define ATTR_FGCOLOR 0x0700
+
 static SDL_Window *sdlWindow;
 static SDL_Renderer *sdlRenderer;
 static SDL_Texture *sdlTexture;
@@ -39,14 +46,16 @@ static int curx, cury;
 
 
 /* draw a character bitmap*/
-static void sdl_drawbitmap(unsigned char c, int x, int y)
+static void sdl_drawbitmap(int c, int x, int y)
 {
-	MWIMAGEBITS *imagebits = rom8x16_bits + CHAR_HEIGHT * c;
+	MWIMAGEBITS *imagebits = rom8x16_bits + CHAR_HEIGHT * (c & 0xFF);
     int minx = x;
     int maxx = x + CHAR_WIDTH - 1;
     int bitcount = 0;
 	unsigned short bitvalue = 0;
 	int height = CHAR_HEIGHT;
+	char fg = (c & ATTR_FGCOLOR)? 255: 0;	// bright white fg for now
+	char bg = (c & ATTR_BGCOLOR)? 192: 0;	// medium white bg on reverse video
 
     while (height > 0) {
 		unsigned char *pixels;
@@ -56,15 +65,15 @@ static void sdl_drawbitmap(unsigned char c, int x, int y)
 			pixels = screen + y * PITCH + x * (BPP >> 3);
         }
         if (MWIMAGE_TESTBIT(bitvalue)) {
-			*pixels++ = 0xff;
-			*pixels++ = 0xff;
-			*pixels++ = 0xff;
-			*pixels++ = 0xff;
-		} else {
-			*pixels++ = 0;
-			*pixels++ = 0;
-			*pixels++ = 0;
-			*pixels++ = 0xff;
+			*pixels++ = fg;		// B
+			*pixels++ = fg;		// G
+			*pixels++ = fg;		// R
+			*pixels++ = 0xFF;	// A
+		} else if (!(c & ATTR_OR)) {
+			*pixels++ = bg;		// B
+			*pixels++ = bg;		// G
+			*pixels++ = bg;		// R
+			*pixels++ = 0xFF;	// A
 		}
         bitvalue = MWIMAGE_SHIFTBIT(bitvalue);
         bitcount--;
@@ -82,14 +91,15 @@ static void sdl_drawbitmap(unsigned char c, int x, int y)
 static void draw_video_ram(int sx, int sy, int ex, int ey)
 {
 	int x, y;
+	word_t *vidram = (word_t *)&mem_stat[VID_BASE];
 
 	for (y = sy; y < ey; y++)
 	{
-		int j = VID_BASE + (y * COLS + sx) * 2;
+		int j = y * COLS + sx;
 		for (x = sx; x < ex; x++)
 		{
-			sdl_drawbitmap(mem_stat[j], x * CHAR_WIDTH, y * CHAR_HEIGHT);
-			j += 2;
+			sdl_drawbitmap(vidram[j], x * CHAR_WIDTH, y * CHAR_HEIGHT);
+			j++;
 		}
 	}
 }
@@ -328,7 +338,7 @@ int con_proc ()
 			sdl_draw (lastx * CHAR_WIDTH, lasty * CHAR_HEIGHT, CHAR_WIDTH, CHAR_HEIGHT);
 
 			// draw current cursor
-			sdl_drawbitmap ('_', x * CHAR_WIDTH, y * CHAR_HEIGHT);
+			sdl_drawbitmap ('_'|ATTR_OR|ATTR_FGCOLOR, x * CHAR_WIDTH, y * CHAR_HEIGHT);
 			sdl_draw (x * CHAR_WIDTH, y * CHAR_HEIGHT, CHAR_WIDTH, CHAR_HEIGHT);
 			lastx = x; lasty = y;
 			needscursor = 0;
