@@ -54,8 +54,8 @@ static void sdl_drawbitmap(int c, int x, int y)
     int bitcount = 0;
 	unsigned short bitvalue = 0;
 	int height = CHAR_HEIGHT;
-	char fg = (c & ATTR_FGCOLOR)? 255: 0;	// bright white fg for now
-	char bg = (c & ATTR_BGCOLOR)? 192: 0;	// medium white bg on reverse video
+	unsigned char fg = (c & ATTR_FGCOLOR)? 255: 0;	// bright white fg for now
+	unsigned char bg = (c & ATTR_BGCOLOR)? 192: 0;	// medium white bg on reverse video
 
     while (height > 0) {
 		unsigned char *pixels;
@@ -124,6 +124,7 @@ static void scrollup(void)
 {
 	int pitch = COLS * 2;
 	byte_t *vid = mem_stat + VID_BASE;
+
 	memcpy(vid, vid + pitch, (LINES-1) * pitch);
 	memset(vid + (LINES-1) * pitch, 0, pitch);
 	update_dirty_region (0, 0);
@@ -132,18 +133,18 @@ static void scrollup(void)
 
 
 /* output character at cursor location*/
-void sdl_textout(unsigned char c)
+void sdl_textout(word_t c)
 {
 	cursoroff();
 
-	switch (c) {
+	switch (c & ATTR_CHARMASK) {
 	case '\0':	return;
 	case '\b':	if (--curx <= 0) curx = 0; goto update;
 	case '\r':	curx = 0; goto update;
 	case '\n':  goto scroll;
 	}
 
-	mem_stat[VID_BASE + (cury * COLS + curx) * 2] = c;
+	*(word_t *)&mem_stat[VID_BASE + (cury * COLS + curx) * 2] = c;
 	update_dirty_region (curx, cury);
 
 	if (++curx >= COLS) {
@@ -160,7 +161,7 @@ update:
 }
 
 
-int con_put_char (byte_t c)
+int con_put_char (word_t c)
 	{
 	sdl_textout(c);
 	return 0;
@@ -188,10 +189,20 @@ int con_pos_get (byte_t *row, byte_t *col)
 	}
 
 
-int con_scrollup ()
+int con_scrollup (byte_t n, byte_t at, byte_t r, byte_t c, byte_t r2, byte_t c2)
 	{
+	byte_t x;
+
 	cursoroff();
-	scrollup();
+	if (n == 0 || n >= VID_LINES)
+		{
+			for (x = c; x <= c2; x++) {
+				*(word_t *)&mem_stat[VID_BASE + (r * VID_COLS + x) * 2] = ' ' | 0x0700;
+				update_dirty_region(x, r);
+			}
+		}
+		else if (r != r2)
+			scrollup();
 	cursoron();
 	return 0;
 	}

@@ -41,6 +41,7 @@ static int int_10h ()
 	addr_t a;
 	byte_t r;  // row
 	byte_t c;  // column
+	byte_t r2, c2, n, at;
 
 //printf("INT 10h fn %x\n", ah);
 	switch (ah)
@@ -69,21 +70,33 @@ static int int_10h ()
 		// Scroll up
 
 		case 0x06:
-			con_scrollup();			// ignores row/col numbers
+			n = reg8_get (REG_AL); 	// # lines
+			at = reg8_get (REG_BH); // attribute
+			r = reg8_get (REG_CH);  // upper L/R
+			c = reg8_get (REG_CL);
+			r2 = reg8_get (REG_DH);	// lower L/R
+			c2 = reg8_get (REG_DL);
+			con_scrollup (n, at, r, c, r2, c2);
 			break;
 
-		// Write character at current cursor position
+		// Write character and attribute at current cursor position
 
 		case 0x09:
+			at = reg8_get (REG_BL); // attribute
+			con_put_char (reg8_get (REG_AL) | at << 8);	// CX count igored
+			break;
+
+		// Write character only at current cursor position
+
 		case 0x0A:
-			con_put_char (reg8_get (REG_AL));
+			con_put_char (reg8_get (REG_AL) | ATTR_NORMAL);
 			break;
 
 		// Write as teletype to current page
 		// Page ignored in video mode 7
 
 		case 0x0E:
-			con_put_char (reg8_get (REG_AL));
+			con_put_char (reg8_get (REG_AL) | ATTR_NORMAL);
 			break;
 
 		// Get video mode

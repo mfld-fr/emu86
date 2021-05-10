@@ -5,7 +5,7 @@
 #include "emu-con.h"   // generic console
 
 
-int con_put_char (byte_t c)
+int con_put_char (word_t c)
 	{
 	return 0;
 	}
@@ -21,7 +21,7 @@ int con_pos_get (byte_t *row, byte_t *col)
 	return 0;
 	}
 
-int con_scrollup ()
+int con_scrollup (byte_t n, byte_t at, byte_t r, byte_t c, byte_t r2, byte_t c2)
 	{
 	return 0;
 	}

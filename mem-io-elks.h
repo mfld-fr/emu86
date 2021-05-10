@@ -13,6 +13,9 @@
 #define VID_SIZE		0x4000		// 16k
 #define VID_PAGE_SIZE	(VID_COLS * 2 * VID_LINES)
 
+#define ATTR_CHARMASK	0x00FF		// character position
+#define ATTR_NORMAL		0x0700		// white on black
+
 // 6845 CRT Controller
 
 #define CRTC_CTRL_PORT	0x03D4		// color
