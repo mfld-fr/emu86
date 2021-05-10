@@ -202,7 +202,7 @@ static int int_10h ()
 
 		default:
 		notimp:
-			printf ("\nerror: INT 10h AH=%hXh not implemented\n", ah);
+			printf ("\nerror: INT 10h AH=%hhXh not implemented\n", ah);
 			err = -1;
 		}
 
@@ -411,13 +411,13 @@ static int int_13h ()
 			dp = find_drive (d);
 			if (!dp || c >= dp->cylinders || h >= dp->heads || s > dp->sectors)
 				{
-				printf("INT 13h AH=%hxh: invalid DCHS %d/%d/%d/%d\n", ah, d, c, h, s);
+				printf("INT 13h AH=%hhXh: invalid DCHS %d/%d/%d/%d\n", ah, d, c, h, s);
 				break;
 				}
 
 			if (s + n > dp->sectors + 1)
 				{
-				printf("INT 13h AH=%hxh: multi-track I/O operation rejected\n", ah);
+				printf("INT 13h AH=%hhXh: multi-track I/O operation rejected\n", ah);
 				break;
 				}
 
@@ -463,7 +463,7 @@ static int int_13h ()
 			break;
 
 		default:
-			printf ("\nerror: INT 13h AH=%hXh not implemented\n", ah);
+			printf ("\nerror: INT 13h AH=%hhXh not implemented\n", ah);
 			return -1;
 		}
 
@@ -489,7 +489,7 @@ static int int_14h ()
 			break;
 
 		default:
-			printf ("\nerror: INT 14h AH=%hXh not implemented\n", ah);
+			printf ("\nerror: INT 14h AH=%hhXh not implemented\n", ah);
 			err = -1;
 		}
 
@@ -614,7 +614,7 @@ static int int_16h ()
 			break;
 
 		default:
-			printf ("\nerror: INT 16h AH=%hXh not implemented\n", ah);
+			printf ("\nerror: INT 16h AH=%hhXh not implemented\n", ah);
 			err = -1;
 		}
 
@@ -638,7 +638,7 @@ static int int_17h ()
 			break;
 
 		default:
-			printf ("\nerror: INT 17h AH=%hXh not implemented\n", ah);
+			printf ("\nerror: INT 17h AH=%hhXh not implemented\n", ah);
 			err = -1;
 		}
 
@@ -714,7 +714,7 @@ static int int_1Ah ()
 			break;
 
 		default:
-			printf ("\nerror: INT 1Ah AH=%hXh not implemented\n", ah);
+			printf ("\nerror: INT 1Ah AH=%hhXh not implemented\n", ah);
 			err = -1;
 		}
 
