@@ -45,6 +45,29 @@ static unsigned char *screen;
 static int curx, cury;
 
 
+#define RGBDEF(r,g,b)	{ r,g,b,255 }
+struct rgba { unsigned char r, g, b, a; };
+
+// 16 color EGA palette for attribute mapping
+static struct rgba EGA_COLORMAP[16] = {
+	RGBDEF( 0  , 0  , 0   ),	/* black*/
+	RGBDEF( 0  , 0  , 192 ),	/* blue*/
+	RGBDEF( 0  , 192, 0   ),	/* green*/
+	RGBDEF( 0  , 192, 192 ),	/* cyan*/
+	RGBDEF( 192, 0  , 0   ),	/* red*/
+	RGBDEF( 192, 0  , 192 ),	/* magenta*/
+	RGBDEF( 192, 128 , 0  ),	/* adjusted brown*/
+	RGBDEF( 192, 192, 192 ),	/* ltgray*/
+	RGBDEF( 128, 128, 128 ),	/* gray*/
+	RGBDEF( 0  , 0  , 255 ),	/* ltblue*/
+	RGBDEF( 0  , 255, 0   ),	/* ltgreen*/
+	RGBDEF( 0  , 255, 255 ),	/* ltcyan*/
+	RGBDEF( 255, 0  , 0   ),	/* ltred*/
+	RGBDEF( 255, 0  , 255 ),	/* ltmagenta*/
+	RGBDEF( 255, 255, 0   ),	/* yellow*/
+	RGBDEF( 255, 255, 255 ),	/* white*/
+};
+
 /* draw a character bitmap*/
 static void sdl_drawbitmap(int c, int x, int y)
 {
@@ -54,8 +77,16 @@ static void sdl_drawbitmap(int c, int x, int y)
     int bitcount = 0;
 	unsigned short bitvalue = 0;
 	int height = CHAR_HEIGHT;
-	unsigned char fg = (c & ATTR_FGCOLOR)? 255: 0;	// bright white fg for now
-	unsigned char bg = (c & ATTR_BGCOLOR)? 192: 0;	// medium white bg on reverse video
+
+	int fg_color = (c & ATTR_FGCOLOR) >> 8;
+	if (c & ATTR_BOLD) fg_color += 8;
+	int bg_color = (c & ATTR_BGCOLOR) >> 12;
+	unsigned char fg_r = EGA_COLORMAP[fg_color].r;
+	unsigned char fg_g = EGA_COLORMAP[fg_color].g;
+	unsigned char fg_b = EGA_COLORMAP[fg_color].b;
+	unsigned char bg_r = EGA_COLORMAP[bg_color].r;
+	unsigned char bg_g = EGA_COLORMAP[bg_color].g;
+	unsigned char bg_b = EGA_COLORMAP[bg_color].b;
 
     while (height > 0) {
 		unsigned char *pixels;
@@ -65,15 +96,15 @@ static void sdl_drawbitmap(int c, int x, int y)
 			pixels = screen + y * PITCH + x * (BPP >> 3);
         }
         if (MWIMAGE_TESTBIT(bitvalue)) {
-			*pixels++ = fg;		// B
-			*pixels++ = fg;		// G
-			*pixels++ = fg;		// R
-			*pixels++ = 0xFF;	// A
+			*pixels++ = fg_b;
+			*pixels++ = fg_g;
+			*pixels++ = fg_r;
+			*pixels++ = 0xFF;
 		} else if (!(c & ATTR_OR)) {
-			*pixels++ = bg;		// B
-			*pixels++ = bg;		// G
-			*pixels++ = bg;		// R
-			*pixels++ = 0xFF;	// A
+			*pixels++ = bg_b;
+			*pixels++ = bg_g;
+			*pixels++ = bg_r;
+			*pixels++ = 0xFF;
 		}
         bitvalue = MWIMAGE_SHIFTBIT(bitvalue);
         bitcount--;
@@ -308,7 +339,6 @@ static void sdl_draw(int x, int y, int width, int height)
 	r.w = width? width: WIDTH;
 	r.h = height? height: HEIGHT;
 
-//printf("DRAW %d,%d %d,%d\n", x, y, width, height);
 	unsigned char *pixels = screen + y * PITCH + x * (BPP >> 3);
 	SDL_UpdateTexture(sdlTexture, &r, pixels, PITCH);
 
