@@ -133,18 +133,20 @@ static void scrollup(void)
 
 
 /* output character at cursor location*/
-void sdl_textout(word_t c)
+void sdl_textout(byte_t c, byte_t a)
 {
 	cursoroff();
 
-	switch (c & ATTR_CHARMASK) {
+	switch (c) {
 	case '\0':	return;
 	case '\b':	if (--curx <= 0) curx = 0; goto update;
 	case '\r':	curx = 0; goto update;
 	case '\n':  goto scroll;
 	}
 
-	*(word_t *)&mem_stat[VID_BASE + (cury * COLS + curx) * 2] = c;
+	mem_stat [VID_BASE + (cury * COLS + curx) * 2 + 0] = c;
+	mem_stat [VID_BASE + (cury * COLS + curx) * 2 + 1] = a;
+
 	update_dirty_region (curx, cury);
 
 	if (++curx >= COLS) {
@@ -161,9 +163,9 @@ update:
 }
 
 
-int con_put_char (word_t c)
+int con_put_char (byte_t c, byte_t a)
 	{
-	sdl_textout(c);
+	sdl_textout(c, a);
 	return 0;
 	}
 

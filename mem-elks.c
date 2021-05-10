@@ -1,8 +1,4 @@
 
-#include <string.h>
-#include <assert.h>
-#include <stdio.h>
-
 #include "emu-mem-io.h"
 #include "mem-io-elks.h"
 
@@ -29,9 +25,7 @@ void reset_dirty_region ()
 
 void mem_write_byte (addr_t a, byte_t b, byte_t init)
 	{
-	assert (a < MEM_MAX);
-
-	if (a >= VID_BASE && a < (VID_BASE + VID_PAGE_SIZE))
+	if (a >= VID_BASE && a < (VID_BASE + VID_SIZE))
 		{
 		byte_t * p = (byte_t *) mem_get_addr (a);
 		*p = b;
@@ -40,22 +34,20 @@ void mem_write_byte (addr_t a, byte_t b, byte_t init)
 		a = (a - VID_BASE) / 2;
 		update_dirty_region(a % VID_COLS, a / VID_COLS);
 		}
-	else if (a >= ROM_BASE && !init)		// Protect ROM
-		{
-		printf ("warning: writing byte into ROM @ %lxh\n", a);
-		}
+
+	// TODO: intercept access to BDA
+
 	else
 		{
-		byte_t * p = mem_get_addr (a);
-		*p = b;
+		// Main memory
+
+		mem_write_byte_0 (a, b, init);
 		}
 	}
 
 void mem_write_word (addr_t a, word_t w, byte_t init)
 	{
-	assert (a < MEM_MAX - 1);
-
-	if (a >= VID_BASE && a < (VID_BASE + VID_PAGE_SIZE))
+	if (a >= VID_BASE && a < (VID_BASE + VID_SIZE))
 		{
 		word_t * p = (word_t *) mem_get_addr (a);
 		*p = w;
@@ -64,13 +56,13 @@ void mem_write_word (addr_t a, word_t w, byte_t init)
 		a = (a - VID_BASE) / 2;
 		update_dirty_region(a % VID_COLS, a / VID_COLS);
 		}
-	else if (a >= (ROM_BASE - 1) && !init)	// Protect ROM
-		{
-		printf ("warning: writing word into ROM @ %lxh\n", a);
-		}
+
+	// TODO: intercept access to BDA
+
 	else
 		{
-		word_t * p = (word_t *) mem_get_addr (a);
-		*p = w;
+		// Main memory
+
+		mem_write_word_0 (a, w, init);
 		}
 	}

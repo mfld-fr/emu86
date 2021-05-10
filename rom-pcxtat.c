@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// EMU86 - ELKS ROM stub (BIOS)
+// EMU86 - PC/XT/AT ROM stub (BIOS)
 //------------------------------------------------------------------------------
 
 #include <stdlib.h>
@@ -20,6 +20,12 @@ extern int info_level;
 
 // BIOS video services
 
+#define BDA_VIDEO_MODE 0x0449
+
+#define FG_WHITE 0x07
+#define BG_BLACK 0x00
+
+
 static byte_t num_hex (byte_t n)
 	{
 	byte_t h = n + '0';
@@ -35,6 +41,7 @@ static int int_10h ()
 	byte_t ah = reg8_get (REG_AH);
 
 	byte_t al;
+	byte_t bl = 0;
 
 	word_t es;
 	word_t bp;
@@ -47,6 +54,30 @@ static int int_10h ()
 
 	switch (ah)
 		{
+		// Set video mode
+
+		case 0x00:
+			al = reg8_get (REG_AL);  // mode
+			if (al != 0x03 && al != 0x07)  // 80x25 color or monochrome
+				{
+				printf ("\nerror: INT 10h AH=00h: unsupported mode %hhXh\n", al);
+				err = -1;
+				}
+
+			// No MDA character attribute support in SDL console
+
+			if (al == 0x07)
+				puts("\nwarning: INT 10h AH=00h: unsupported MDA character attributes");
+
+			mem_stat [BDA_VIDEO_MODE] = al;
+			break;
+
+		// Set cursor type
+
+		case 0x01:
+			//puts ("\nwarning: INT 10h AH=01h: no cursor type supported");
+			break;
+
 		// Set cursor position
 
 		case 0x02:
@@ -80,30 +111,49 @@ static int int_10h ()
 			con_scrollup (n, at, r, c, r2, c2);
 			break;
 
-		// Write character and attribute at current cursor position
+		// Scroll down
 
-		case 0x09:
-			at = reg8_get (REG_BL); // attribute
-			con_put_char (reg8_get (REG_AL), at);  // CX count ignored
+		case 0x07:
+			puts ("\nwarning: INT 10h AH=07h: no scroll up supported");
+			//con_scrolldown();
 			break;
 
-		// Write character only at current cursor position
+		// Read character at current cursor position
+
+		case 0x08:
+			reg16_set (REG_AX, FG_WHITE | BG_BLACK);  // dummy character & attribute
+			break;
+
+		// Write character at current cursor position
+		// Prevent black on black
+
+		case 0x09:
+			if (mem_stat [BDA_VIDEO_MODE] == 3)
+				bl = reg8_get (REG_BL);
+
+			// no break
 
 		case 0x0A:
-			con_put_char (reg8_get (REG_AL), ATTR_NORMAL);
+			con_put_char (reg8_get (REG_AL), bl ? bl : (FG_WHITE | BG_BLACK));
+			break;
+
+		// Set color palette
+
+		case 0x0B:
+			puts ("\nwarning: INT 10h AH=0Bh: no palette supported");
 			break;
 
 		// Write as teletype to current page
-		// Page ignored in video mode 7
+		// Page ignored
 
 		case 0x0E:
-			con_put_char (reg8_get (REG_AL), ATTR_NORMAL);
+			con_put_char (reg8_get (REG_AL), FG_WHITE | BG_BLACK);
 			break;
 
 		// Get video mode
 
 		case 0x0F:
-			reg8_set (REG_AL, mem_stat [0x449]); // BDA:49h
+			reg8_set (REG_AL, mem_stat [BDA_VIDEO_MODE]);
 			reg8_set (REG_AH, 80);  // 80 columns
 			reg8_set (REG_BH, 0);   // page 0 active
 			break;
@@ -135,7 +185,7 @@ static int int_10h ()
 
 			while (cx--)
 				{
-				con_put_char (mem_read_byte (a++), ATTR_NORMAL);
+				con_put_char (mem_read_byte (a++), FG_WHITE | BG_BLACK);
 				}
 
 			break;
@@ -145,9 +195,9 @@ static int int_10h ()
 		case 0x1D:
 			al = reg8_get (REG_AL);
 			c = num_hex (al >> 4);
-			con_put_char (c, ATTR_NORMAL);
+			con_put_char (c, FG_WHITE | BG_BLACK);
 			c = num_hex (al & 0x0F);
-			con_put_char (c, ATTR_NORMAL);
+			con_put_char (c, FG_WHITE | BG_BLACK);
 			break;
 
 		default:
@@ -160,12 +210,26 @@ static int int_10h ()
 	}
 
 
+// BIOS device list
+
+static int int_11h ()
+	{
+	// 1 floppy drive
+	// 80x25 monochrome
+
+	reg16_set (REG_AX, 0x0031);
+	return 0;
+	}
+
+
 // BIOS memory services
 
 static int int_12h ()
 	{
 	// 512 KiB of low memory
 	// no extended memory
+
+	// TODO: extend to 640K for PC
 
 	reg16_set (REG_AX, 512);
 	return 0;
@@ -367,6 +431,13 @@ static int int_13h ()
 				}
 			break;
 
+		// Verify sectors
+
+		case 0x04:
+			reg8_set (REG_AH, 0);  // 'no error' status
+			err = 0;
+			break;
+
 		case 0x08:  // get drive parms
 			d = reg8_get (REG_DL);
 			dp = find_drive (d);
@@ -383,6 +454,14 @@ static int int_13h ()
 			err = 0;
 			break;
 
+		// Read DASD type
+		// Unsupported on old PC
+
+		case 0x15:
+			puts ("\nwarning: INT 13h AH=15h: no DASD type");
+			reg8_set (REG_AH, 0x01);  // 'invalid command' status
+			break;
+
 		default:
 			printf ("\nerror: INT 13h AH=%hXh not implemented\n", ah);
 			return -1;
@@ -390,6 +469,31 @@ static int int_13h ()
 
 	flag_set (FLAG_CF, err? 1: 0);
 	return 0;
+	}
+
+
+// BIOS asynchronous communication services
+
+static int int_14h ()
+	{
+	int err = 0;
+
+	byte_t ah = reg8_get (REG_AH);
+
+	switch (ah)
+		{
+		// Initialize port
+
+		case 0x00:
+			reg16_set(REG_AX, 0x0000); // dummy modem & line statuses
+			break;
+
+		default:
+			printf ("\nerror: INT 14h AH=%hXh not implemented\n", ah);
+			err = -1;
+		}
+
+	return err;
 	}
 
 
@@ -414,6 +518,29 @@ static int int_15h ()
 
 // BIOS keyboard services
 
+// Reverse scancode table, so we have a scancode to return with the ASCII
+// TODO: move to a keyboard driver
+
+static const unsigned char scancodes[] = {
+	// NUL SOH   STX   ETX   EOT   ENQ   ACK   BEL    BS    HT    LF    VT    FF    CR    SO    SI
+	0x03, 0x1E, 0x30, 0x2E, 0x20, 0x12, 0x21, 0x22, 0x0E, 0x0F, 0x24, 0x25, 0x26, 0x1C, 0x31, 0x18,
+	// DLE DC1   DC2   DC3   DC4   NAK   SYN   ETB   CAN    EM   SUB   ESC    FS    GS    RS    US
+	0x19, 0x10, 0x13, 0x1F, 0x14, 0x16, 0x2F, 0x11, 0x2D, 0x15, 0x2C, 0x01, 0x2B, 0x1B, 0x07, 0x0C,
+	// SP    !     "     #     $     %     &     '     (     )     *     +     ,     -     .     /
+	0x39, 0x02, 0x28, 0x04, 0x05, 0x06, 0x08, 0x28, 0x0A, 0x0B, 0x09, 0x0D, 0x33, 0x0C, 0x34, 0x35,
+	// 0     1     2     3     4     5     6     7     8     9     :     ;     <     =     >     ?
+	0x0B, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x27, 0x27, 0x33, 0x0D, 0x34, 0x35,
+	// @     A     B     C     D     E     F     G     H     I     J     K     L     M     N     O
+	0x03, 0x1E, 0x30, 0x2E, 0x20, 0x12, 0x21, 0x22, 0x23, 0x17, 0x24, 0x25, 0x26, 0x32, 0x31, 0x18,
+	// P     Q     R     S     T     U     V     W     X     Y     Z     [     \     ]     ^     _
+	0x19, 0x10, 0x13, 0x1F, 0x14, 0x16, 0x2F, 0x11, 0x2D, 0x15, 0x2C, 0x1A, 0x2B, 0x1B, 0x07, 0x0C,
+	// `     a     b     c     d     e     f     g     h     i     j     k     l     m     n     o
+	0x29, 0x1E, 0x30, 0x2E, 0x20, 0x12, 0x21, 0x22, 0x23, 0x17, 0x24, 0x25, 0x26, 0x32, 0x31, 0x18,
+	// p     q     r     s     t     u     v     w     x     y     z     {     |     }     ~   DEL
+	0x19, 0x10, 0x13, 0x1F, 0x14, 0x16, 0x2F, 0x11, 0x2D, 0x15, 0x2C, 0x1A, 0x2B, 0x1B, 0x29, 0x53
+};
+
+
 static word_t key_prev = 0;
 
 static int int_16h ()
@@ -431,6 +558,7 @@ static int int_16h ()
 		// while blocking in official BIOS.
 
 		case 0x00:
+		case 0x10:
 			if (key_prev)
 				{
 				reg8_set (REG_AL, (byte_t) key_prev);
@@ -444,7 +572,15 @@ static int int_16h ()
 				reg8_set (REG_AL, (byte_t) k);  // ASCII code
 				}
 
-			reg8_set (REG_AH, 0);  // no scan code
+			// Convert ASCII to scan code
+
+			convert:
+
+			if (reg8_get (REG_AL) < 0x80)
+				reg8_set (REG_AH, scancodes [reg8_get(REG_AL)]);
+			else
+				reg8_set (REG_AH, 0);  // no scan code
+
 			break;
 
 		// Peek character
@@ -452,36 +588,29 @@ static int int_16h ()
 
 		case 0x01:
 		case 0x11:
-			if (con_poll_key ())
-				{
-				flag_set (FLAG_ZF, 0);
-
-				err = con_get_key (&key_prev);
-				if (err) break;
-
-				reg8_set (REG_AL, (byte_t) key_prev);
-				reg8_set (REG_AH, 0);
-				}
-			else
+			if (!con_poll_key ())
 				{
 				flag_set (FLAG_ZF, 1);  // no character in queue
+				break;
 				}
 
+			flag_set (FLAG_ZF, 0);
+
+			err = con_get_key (&key_prev);
+			if (err) break;
+
+			reg8_set (REG_AL, (byte_t) key_prev);
+			goto convert;
+
+		// Get key modifier status
+
+		case 0x02:
+			reg8_set (REG_AL, 0);  // no modifier
 			break;
 
 		// Set typematic rate - ignore
 
 		case 0x03:
-			break;
-
-		// Extended keyboard read
-
-		case 0x10:
-			err = con_get_key (&k);
-			if (err) break;
-
-			reg8_set (REG_AL, (byte_t) k);  // ASCII code
-			reg8_set (REG_AH, 0);           // No scan code
 			break;
 
 		default:
@@ -497,15 +626,23 @@ static int int_16h ()
 
 static int int_17h ()
 	{
+	int err = 0;
+
 	byte_t ah = reg8_get (REG_AH);
 	switch (ah)
 		{
+		// Initialize Printer Port
+
+		case 0x1:
+			reg8_set (REG_AH, 0x00); // dummy printer status
+			break;
+
 		default:
-			printf ("\nerror: INT 17h: AH=%hXh not implemented\n", ah);
-			return -1;
+			printf ("\nerror: INT 17h AH=%hXh not implemented\n", ah);
+			err = -1;
 		}
 
-	return 0;
+	return err;
 	}
 
 
@@ -530,6 +667,8 @@ static int int_FEh ()
 
 static int int_1Ah ()
 	{
+	int err = 0;
+
 	byte_t ah = reg8_get (REG_AH);
 	switch (ah)
 		{
@@ -541,12 +680,45 @@ static int int_1Ah ()
 			reg8_set (REG_AL, 0);   // no day wrap
 			break;
 
+		// Set system time
+
+		case 0x01:
+			break;
+
+		// Read time from RTC
+
+		case 0x02:
+			reg8_set (REG_CH, 0x12);  // hours (in BCD)
+			reg8_set (REG_CL, 0x34);  // minutes (in BCD)
+			reg8_set (REG_DH, 0x56);  // seconds (in BCD)
+			reg8_set (REG_DL, 0);     // no daylight savings time
+			break;
+
+		// Set time in RTC
+
+		case 0x03:
+			break;
+
+		// Read date from RTC
+
+		case 0x04:
+			reg8_set (REG_CH, 0x20);  // century (in BCD)
+			reg8_set (REG_CL, 0x21);  // year (in BCD)
+			reg8_set (REG_DH, 0x05);  // month (in BCD)
+			reg8_set (REG_DL, 0x09);  // day (in BCD)
+			break;
+
+		// Set date in RTC
+
+		case 0x05:
+			break;
+
 		default:
-			printf ("\nerror: INT 1Ah: AH=%hXh not implemented\n", ah);
-			return -1;
+			printf ("\nerror: INT 1Ah AH=%hXh not implemented\n", ah);
+			err = -1;
 		}
 
-	return 0;
+	return err;
 	}
 
 
@@ -555,8 +727,10 @@ static int int_1Ah ()
 int_num_hand_t _int_tab [] = {
 	{ 0x03, int_03h },
 	{ 0x10, int_10h },  // BIOS video services
+	{ 0x11, int_11h },  // BIOS equipment service
 	{ 0x12, int_12h },
 	{ 0x13, int_13h },  // BIOS disk services
+	{ 0x14, int_14h },  // BIOS asynchronous communication services
 	{ 0x15, int_15h },
 	{ 0x16, int_16h },
 	{ 0x17, int_17h },
@@ -665,7 +839,7 @@ void rom_init (void)
 	// BIOS Data Area (BDA) setup for EGA/MDA adaptors
 
 	memset (mem_stat+BDA_BASE, 0x00, 256);
-	*(byte_t *) (mem_stat+BDA_BASE+0x49) =  3; 				// video mode (3= EGA 7=MDA)
+	mem_stat [BDA_VIDEO_MODE] = 3;  // color 80x25 character (EGA)
 	*(byte_t *) (mem_stat+BDA_BASE+0x4a) =  VID_COLS;		// console width
 	*(word_t *) (mem_stat+BDA_BASE+0x4c) =  VID_PAGE_SIZE;	// page size
 	*(word_t *) (mem_stat+BDA_BASE+0x63) =  CRTC_CTRL_PORT;	// 6845 CRTC

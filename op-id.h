@@ -10,6 +10,8 @@
 
 // LUT BEGIN
 
+// TODO: better to base on same value as opcode 0x70
+
 #define OP_JUMP     0x0000  // base for jump 1 operations
 #define OP_JO       0x0000  // same order as in opcode
 #define OP_JNO      0x0001

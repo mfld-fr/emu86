@@ -9,7 +9,7 @@
 
 // Screen emulation
 
-int con_put_char (word_t c);
+int con_put_char (byte_t c, byte_t a);
 int con_pos_set (byte_t row, byte_t col);
 int con_pos_get (byte_t *row, byte_t *col);
 int con_scrollup (byte_t n, byte_t at, byte_t r, byte_t c, byte_t r2, byte_t c2);

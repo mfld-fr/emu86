@@ -3,9 +3,11 @@
 # Target selection
 # elks:    minimal PC to run ELKS
 # advtech: Advantech SNMP-1000 SBC
+# pcxtat:  legacy PC/XT/AT (experimental)
 
-TARGET=elks
+#TARGET=elks
 #TARGET=advtech
+TARGET=pcxtat
 
 # Platform selection
 # terminal:   standard 
@@ -39,8 +41,8 @@ SERIAL=none
 #SERIAL=pty
 
 # Disassembly style
-# att = AT&T syntax (GNU default)
-# intel = Intel syntax
+# att:   AT&T syntax (GNU default)
+# intel: Intel syntax
 
-STYLE=att
-#STYLE=intel
+#STYLE=att
+STYLE=intel

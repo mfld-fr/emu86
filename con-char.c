@@ -6,7 +6,7 @@
 #include "emu-char.h"  // generic character backend
 
 
-int con_put_char (word_t c)
+int con_put_char (byte_t c, byte_t a)
 	{
 	return char_send (c);
 	}

@@ -255,7 +255,7 @@ static void val_set (op_var_t * var1, const op_var_t * var2)
 
 // Null operation
 
-static int op_null (op_desc_t * op_desc)
+static int op_null (op_desc_t __attribute__((unused)) * op_desc)
 	{
 	return 0;
 	}
@@ -926,9 +926,10 @@ int exec_int (byte_t i)
 
 	// Try emulator handler first
 
-	if (info_level & 2) printf("[INT %02xh AX=%04x]\n", i, reg16_get(REG_AX));
+	if (info_level & 2) printf("[INT %02Xh AX=%04Xh]\n", i, reg16_get (REG_AX));
 	err = int_hand (i);
-	if (err > 0) {
+	if (err > 0)
+		{
 		// Check interrupt vector
 
 		addr_t vect = ((addr_t) i) << 2;
@@ -950,8 +951,9 @@ int exec_int (byte_t i)
 
 			err = 0;
 			}
-		else {
-			printf ("fatal: no handler for INT %hhXh\n", i);
+		else
+			{
+			printf ("\nerror: no vector for INT %hhXh\n", i);
 			err = -1;
 			}
 		}
@@ -962,8 +964,6 @@ int exec_int (byte_t i)
 
 static int op_int (op_desc_t * op_desc)
 	{
-	int err = -1;
-
 	byte_t i = 0;
 
 	switch (OP_ID)
@@ -986,8 +986,7 @@ static int op_int (op_desc_t * op_desc)
 
 		}
 
-	err = exec_int (i);
-	return err;
+	return exec_int (i);
 	}
 
 
@@ -1664,8 +1663,8 @@ static op_id_hand_t _id_hand_tab [] = {
 	{ OP_WAIT,     NULL         },
 	{ OP_ESC,      NULL         },
 
-	{ OP_ENTER,	   op_enter     },
-	{ OP_LEAVE,	   op_leave     },
+	{ OP_ENTER,    op_enter     },
+	{ OP_LEAVE,    op_leave     },
 
 	{ OP_NULL,     NULL         }  // end of table
 	};
@@ -1692,7 +1691,7 @@ int check_exec ()
 
 		if (id1 != OP_NULL && id2 != (id1 + 1))
 			{
-			printf ("error: bad order in execute table for op %hxh\n", id2);
+			printf ("\nerror: bad order in execute table for op %hxh\n", id2);
 			err = -1;
 			break;
 			}
@@ -1733,7 +1732,7 @@ int op_exec (op_desc_t * op_desc)
 
 			if (id != desc->id)
 				{
-				printf ("error: id mismatch for op %hxh\n", id);
+				printf ("\nerror: id mismatch for op %hxh\n", id);
 				break;
 				}
 
@@ -1745,7 +1744,7 @@ int op_exec (op_desc_t * op_desc)
 
 		if (!hand)
 			{
-			printf ("error: no handler for op %hXh\n", id);
+			printf ("\nerror: no handler for op %hXh\n", id);
 			break;
 			}
 
