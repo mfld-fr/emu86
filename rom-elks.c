@@ -22,30 +22,16 @@ extern int info_level;
 
 // BIOS video services
 
-static byte_t num_hex (byte_t n)
-	{
-	byte_t h = n + '0';
-	if (h > '9') h += 'A' - '9';
-	return h;
-	}
-
+#define BDA_VIDEO_MODE 0x0449
 
 static int int_10h ()
 	{
 	int err = 0;
 
-	byte_t ah = reg8_get (REG_AH);
-
-	byte_t al;
-
-	word_t es;
-	word_t bp;
-	word_t cx;
-
-	addr_t a;
 	byte_t r;  // row
 	byte_t c;  // column
 	byte_t r2, c2, n, at;
+	byte_t ah = reg8_get (REG_AH);
 
 	switch (ah)
 		{
@@ -67,7 +53,7 @@ static int int_10h ()
 
 		// Select active page
 
-		case 0x05:
+		case 0x05:		// FIXME page required for multiple consoles
 			break;
 
 		// Scroll up
@@ -89,12 +75,6 @@ static int int_10h ()
 			con_put_char (reg8_get (REG_AL), at);  // CX count ignored
 			break;
 
-		// Write character only at current cursor position
-
-		case 0x0A:
-			con_put_char (reg8_get (REG_AL), ATTR_NORMAL);
-			break;
-
 		// Write as teletype to current page
 		// Page ignored in video mode 7
 
@@ -105,7 +85,7 @@ static int int_10h ()
 		// Get video mode
 
 		case 0x0F:
-			reg8_set (REG_AL, mem_stat [0x449]); // BDA:49h
+			reg8_set (REG_AL, mem_stat [BDA_VIDEO_MODE]);
 			reg8_set (REG_AH, 80);  // 80 columns
 			reg8_set (REG_BH, 0);   // page 0 active
 			break;
@@ -125,31 +105,6 @@ static int int_10h ()
 			if (reg8_get(REG_AL) != 0x00)
 				goto notimp;
 			reg8_set (REG_AL, 0);	// no VGA
-			break;
-
-		// Write string
-
-		case 0x13:
-			es = seg_get (SEG_ES);
-			bp = reg16_get (REG_BP);
-			cx = reg16_get (REG_CX);
-			a = addr_seg_off (es, bp);
-
-			while (cx--)
-				{
-				con_put_char (mem_read_byte (a++), ATTR_NORMAL);
-				}
-
-			break;
-
-		// Write byte as hexadecimal
-
-		case 0x1D:
-			al = reg8_get (REG_AL);
-			c = num_hex (al >> 4);
-			con_put_char (c, ATTR_NORMAL);
-			c = num_hex (al & 0x0F);
-			con_put_char (c, ATTR_NORMAL);
 			break;
 
 		default:
@@ -395,25 +350,6 @@ static int int_13h ()
 	}
 
 
-// BIOS misc services
-
-static int int_15h ()
-	{
-	byte_t ah = reg8_get (REG_AH);
-	switch (ah)
-		{
-		// Return CF=1 for all non implemented functions
-		// as recommended by Alan Cox on the ELKS mailing list
-
-		default:
-			flag_set (FLAG_CF, 1);
-
-		}
-
-	return 0;
-	}
-
-
 // BIOS keyboard services
 
 static word_t key_prev = 0;
@@ -453,7 +389,6 @@ static int int_16h ()
 		// FIXME: buggy around key_prev
 
 		case 0x01:
-		case 0x11:
 			if (con_poll_key ())
 				{
 				flag_set (FLAG_ZF, 0);
@@ -476,38 +411,12 @@ static int int_16h ()
 		case 0x03:
 			break;
 
-		// Extended keyboard read
-
-		case 0x10:
-			err = con_get_key (&k);
-			if (err) break;
-
-			reg8_set (REG_AL, (byte_t) k);  // ASCII code
-			reg8_set (REG_AH, 0);           // No scan code
-			break;
-
 		default:
 			printf ("\nerror: INT 16h AH=%hhXh not implemented\n", ah);
 			err = -1;
 		}
 
 	return err;
-	}
-
-
-// BIOS printer services
-
-static int int_17h ()
-	{
-	byte_t ah = reg8_get (REG_AH);
-	switch (ah)
-		{
-		default:
-			printf ("\nerror: INT 17h AH=%hhXh not implemented\n", ah);
-			return -1;
-		}
-
-	return 0;
 	}
 
 
@@ -528,42 +437,15 @@ static int int_FEh ()
 	}
 
 
-// BIOS time services
-
-static int int_1Ah ()
-	{
-	byte_t ah = reg8_get (REG_AH);
-	switch (ah)
-		{
-		// Get system time
-
-		case 0x00:
-			reg16_set (REG_CX, 0);  // stay on 0
-			reg16_set (REG_DX, 0);
-			reg8_set (REG_AL, 0);   // no day wrap
-			break;
-
-		default:
-			printf ("\nerror: INT 1Ah AH=%hhXh not implemented\n", ah);
-			return -1;
-		}
-
-	return 0;
-	}
-
-
 // Interrupt handler table
 
 int_num_hand_t _int_tab [] = {
-	{ 0x03, int_03h },
+	{ 0x03, int_03h },	// debugger
 	{ 0x10, int_10h },  // BIOS video services
-	{ 0x12, int_12h },
+	{ 0x12, int_12h },	// BIOS memory size
 	{ 0x13, int_13h },  // BIOS disk services
-	{ 0x15, int_15h },
-	{ 0x16, int_16h },
-	{ 0x17, int_17h },
+	{ 0x16, int_16h },	// BIOS keyboard services
 //	{ 0x19, int_19h },  // OS boot
-	{ 0x1A, int_1Ah },
 	{ 0xFE, int_FEh },  // disk boot
 //	{ 0xFF, int_FFh },  // reserved for MON86
 	{ 0,    NULL    }
