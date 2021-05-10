@@ -84,26 +84,26 @@ static int int_10h ()
 
 		case 0x09:
 			at = reg8_get (REG_BL); // attribute
-			con_put_char (reg8_get (REG_AL) | at << 8);	// CX count igored
+			con_put_char (reg8_get (REG_AL), at);  // CX count ignored
 			break;
 
 		// Write character only at current cursor position
 
 		case 0x0A:
-			con_put_char (reg8_get (REG_AL) | ATTR_NORMAL);
+			con_put_char (reg8_get (REG_AL), ATTR_NORMAL);
 			break;
 
 		// Write as teletype to current page
 		// Page ignored in video mode 7
 
 		case 0x0E:
-			con_put_char (reg8_get (REG_AL) | ATTR_NORMAL);
+			con_put_char (reg8_get (REG_AL), ATTR_NORMAL);
 			break;
 
 		// Get video mode
 
 		case 0x0F:
-			reg8_set (REG_AL, 7);   // text monochrome 80x25
+			reg8_set (REG_AL, mem_stat [0x449]); // BDA:49h
 			reg8_set (REG_AH, 80);  // 80 columns
 			reg8_set (REG_BH, 0);   // page 0 active
 			break;
@@ -135,7 +135,7 @@ static int int_10h ()
 
 			while (cx--)
 				{
-				con_put_char (mem_read_byte (a++));
+				con_put_char (mem_read_byte (a++), ATTR_NORMAL);
 				}
 
 			break;
@@ -145,9 +145,9 @@ static int int_10h ()
 		case 0x1D:
 			al = reg8_get (REG_AL);
 			c = num_hex (al >> 4);
-			con_put_char (c);
+			con_put_char (c, ATTR_NORMAL);
 			c = num_hex (al & 0x0F);
-			con_put_char (c);
+			con_put_char (c, ATTR_NORMAL);
 			break;
 
 		default:
@@ -319,6 +319,7 @@ static int int_13h ()
 	byte_t ah = reg8_get (REG_AH);
 	byte_t d, h, s, n;
 	word_t c, seg, off;
+	// FIXME: make emulator and BIOS errors distinct
 	int err = -1;
 	struct diskinfo *dp;
 
@@ -443,10 +444,11 @@ static int int_16h ()
 				reg8_set (REG_AL, (byte_t) k);  // ASCII code
 				}
 
-			reg8_set (REG_AH, 0);  // No scan code
+			reg8_set (REG_AH, 0);  // no scan code
 			break;
 
 		// Peek character
+		// FIXME: buggy around key_prev
 
 		case 0x01:
 		case 0x11:

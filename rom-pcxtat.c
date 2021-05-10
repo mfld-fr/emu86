@@ -20,6 +20,12 @@ extern int info_level;
 
 // BIOS video services
 
+#define BDA_VIDEO_MODE 0x0449
+
+#define FG_WHITE 0x07
+#define BG_BLACK 0x00
+
+
 static byte_t num_hex (byte_t n)
 	{
 	byte_t h = n + '0';
@@ -35,6 +41,7 @@ static int int_10h ()
 	byte_t ah = reg8_get (REG_AH);
 
 	byte_t al;
+	byte_t bl = 0;
 
 	word_t es;
 	word_t bp;
@@ -43,6 +50,7 @@ static int int_10h ()
 	addr_t a;
 	byte_t r;  // row
 	byte_t c;  // column
+	byte_t r2, c2, n, at;
 
 	switch (ah)
 		{
@@ -50,12 +58,18 @@ static int int_10h ()
 
 		case 0x00:
 			al = reg8_get (REG_AL);  // mode
-			if (al != 0x07)  // 80x25 monochrome
+			if (al != 0x03 && al != 0x07)  // 80x25 color or monochrome
 				{
-				printf ("\nerror: INT 10h AH=00h: unsupported mode %hhXh", al);
+				printf ("\nerror: INT 10h AH=00h: unsupported mode %hhXh\n", al);
 				err = -1;
 				}
 
+			// No MDA character attribute support in SDL console
+
+			if (al == 0x07)
+				puts("\nwarning: INT 10h AH=00h: unsupported MDA character attributes");
+
+			mem_stat [BDA_VIDEO_MODE] = al;
 			break;
 
 		// Set cursor type
@@ -88,7 +102,13 @@ static int int_10h ()
 		// Scroll up
 
 		case 0x06:
-			con_scrollup();  // ignores row & column numbers
+			n = reg8_get (REG_AL); 	// # lines
+			at = reg8_get (REG_BH); // attribute
+			r = reg8_get (REG_CH);  // upper L/R
+			c = reg8_get (REG_CL);
+			r2 = reg8_get (REG_DH);	// lower L/R
+			c2 = reg8_get (REG_DL);
+			con_scrollup (n, at, r, c, r2, c2);
 			break;
 
 		// Scroll down
@@ -101,14 +121,20 @@ static int int_10h ()
 		// Read character at current cursor position
 
 		case 0x08:
-			reg16_set (REG_AX, 0);  // dummy character & attribute
+			reg16_set (REG_AX, FG_WHITE | BG_BLACK);  // dummy character & attribute
 			break;
 
 		// Write character at current cursor position
+		// Prevent black on black
 
 		case 0x09:
+			if (mem_stat [BDA_VIDEO_MODE] == 3)
+				bl = reg8_get (REG_BL);
+
+			// no break
+
 		case 0x0A:
-			con_put_char (reg8_get (REG_AL));
+			con_put_char (reg8_get (REG_AL), bl ? bl : (FG_WHITE | BG_BLACK));
 			break;
 
 		// Set color palette
@@ -118,16 +144,16 @@ static int int_10h ()
 			break;
 
 		// Write as teletype to current page
-		// Page ignored in video mode 7
+		// Page ignored
 
 		case 0x0E:
-			con_put_char (reg8_get (REG_AL));
+			con_put_char (reg8_get (REG_AL), FG_WHITE | BG_BLACK);
 			break;
 
 		// Get video mode
 
 		case 0x0F:
-			reg8_set (REG_AL, 7);   // text monochrome 80x25
+			reg8_set (REG_AL, mem_stat [BDA_VIDEO_MODE]);
 			reg8_set (REG_AH, 80);  // 80 columns
 			reg8_set (REG_BH, 0);   // page 0 active
 			break;
@@ -159,7 +185,7 @@ static int int_10h ()
 
 			while (cx--)
 				{
-				con_put_char (mem_read_byte (a++));
+				con_put_char (mem_read_byte (a++), FG_WHITE | BG_BLACK);
 				}
 
 			break;
@@ -169,9 +195,9 @@ static int int_10h ()
 		case 0x1D:
 			al = reg8_get (REG_AL);
 			c = num_hex (al >> 4);
-			con_put_char (c);
+			con_put_char (c, FG_WHITE | BG_BLACK);
 			c = num_hex (al & 0x0F);
-			con_put_char (c);
+			con_put_char (c, FG_WHITE | BG_BLACK);
 			break;
 
 		default:
@@ -813,8 +839,10 @@ void rom_init (void)
 	// BIOS Data Area (BDA) setup for EGA/MDA adaptors
 
 	memset (mem_stat+BDA_BASE, 0x00, 256);
-	*(byte_t *) (mem_stat+BDA_BASE+0x49) =  3; 				// video mode (7=MDA)
+	mem_stat [BDA_VIDEO_MODE] = 3;  // color 80x25 character (EGA)
 	*(byte_t *) (mem_stat+BDA_BASE+0x4a) =  VID_COLS;		// console width
 	*(word_t *) (mem_stat+BDA_BASE+0x4c) =  VID_PAGE_SIZE;	// page size
 	*(word_t *) (mem_stat+BDA_BASE+0x63) =  CRTC_CTRL_PORT;	// 6845 CRTC
+
+	memset (mem_stat+VID_BASE, 0x00, VID_PAGE_SIZE);		// clear text RAM
 	}

@@ -96,6 +96,7 @@ static addr_t * _break_code_addr = NULL;
 static addr_t _break_step_over_code_addr = -1;
 
 static int _flag_trace  = 0;  // trace next instruction
+static int _flag_filter = 0;  // filter traces
 static int _flag_prompt = 0;  // prompt for debug command
 static int _flag_exec   = 1;  // execute next instruction
 static int _flag_exit   = 0;  // exit main loop
@@ -301,7 +302,7 @@ static void cpu_proc (void)
 	// Trace instruction before debugging & execution
 	// TODO: trace filter as option
 
-	if (_flag_trace && (code_stat [addr_seg_off (op_code_seg, op_code_off)] == 0))
+	if (_flag_trace && ((_flag_filter == 0) || code_stat [addr_seg_off (op_code_seg, op_code_off)] == 0))
 		{
 		printf ("%.4hX:%.4hX  ", seg_get (SEG_CS), reg16_get (REG_IP));
 		print_column (op_code_str, 3 * OPCODE_MAX + 1);
@@ -397,6 +398,7 @@ static void usage (char * argv0)
 	puts ("  -c <address>         code breakpoint address");
 	puts ("  -d <address>         data breakpoint address");
 	puts ("  -t                   trace mode");
+	puts ("  -T                   filtered trace mode");
 	puts ("  -i                   interactive mode");
 	puts ("  -p                   program mode");
 	puts ("  -v <level>           verbose info level");
@@ -417,7 +419,7 @@ int command_line (int argc, char * argv [])
 
 	while (1)
 		{
-		opt = getopt (argc, argv, "w:f:I:x:c:d:v:tip");
+		opt = getopt (argc, argv, "w:f:I:x:c:d:v:tTip");
 		if (opt < 0 || opt == '?') break;
 
 		switch (opt)
@@ -497,6 +499,11 @@ int command_line (int argc, char * argv [])
 
 			case 't':  // trace mode
 				_flag_trace = 1;
+				break;
+
+			case 'T':  // trace mode
+				_flag_trace = 1;
+				_flag_filter = 1;
 				break;
 
 			case 'i':  // interactive mode

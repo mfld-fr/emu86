@@ -25,7 +25,7 @@ void reset_dirty_region ()
 
 void mem_write_byte (addr_t a, byte_t b, byte_t init)
 	{
-	if (a >= VID_BASE && a < (VID_BASE + VID_PAGE_SIZE))
+	if (a >= VID_BASE && a < (VID_BASE + VID_SIZE))
 		{
 		byte_t * p = (byte_t *) mem_get_addr (a);
 		*p = b;
@@ -47,7 +47,7 @@ void mem_write_byte (addr_t a, byte_t b, byte_t init)
 
 void mem_write_word (addr_t a, word_t w, byte_t init)
 	{
-	if (a >= VID_BASE && a < (VID_BASE + VID_PAGE_SIZE))
+	if (a >= VID_BASE && a < (VID_BASE + VID_SIZE))
 		{
 		word_t * p = (word_t *) mem_get_addr (a);
 		*p = w;

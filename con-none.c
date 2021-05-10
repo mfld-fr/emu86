@@ -5,7 +5,7 @@
 #include "emu-con.h"   // generic console
 
 
-int con_put_char (word_t c)
+int con_put_char (byte_t c, byte_t a)
 	{
 	return 0;
 	}
