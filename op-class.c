@@ -278,7 +278,7 @@ static int class_reg (byte_t flags, op_desc_t * op)
 	}
 
 
-static int class_seg (byte_t __attribute__((unused)) flags, op_desc_t * op)
+static void class_seg (byte_t __attribute__((unused)) flags, op_desc_t * op)
 	{
 	op->var_count = 1;
 
@@ -287,8 +287,6 @@ static int class_seg (byte_t __attribute__((unused)) flags, op_desc_t * op)
 	var_seg->type = VT_SEG;
 	var_seg->w = 1;
 	var_seg->val.r = op->seg1;
-
-	return 0;
 	}
 
 
@@ -613,7 +611,7 @@ static byte_t fetch_code_2 (op_desc_t * op_desc)
 
 static int class_1_00h (byte_t code, op_desc_t * op_desc)
 	{
-	int err = -1;
+	int err = 0;
 
 	while (1)
 		{
@@ -640,22 +638,30 @@ static int class_1_00h (byte_t code, op_desc_t * op_desc)
 
 		if (!(code & 0x20))
 			{
-			OP_ID = OP_STACK1 + (code & 0x01);  // TODO: POP CS allowed for 8086 / forbidden for 80186
-			err = class_seg (0, op_desc);
+			// POP CS has no sense - Issue #4
+
+			if (code == 0x0F)
+				{
+				puts ("\nerror: insane POP CS (0Fh)");
+				err = -1;
+				break;
+				}
+
+			OP_ID = OP_STACK1 + (code & 0x01);
+			class_seg (0, op_desc);
 			break;
 			}
 
 		if (!(code & 0x01))
 			{
 			OP_ID = OP_SEG;
-			err = class_seg (0, op_desc);
+			class_seg (0, op_desc);
 			break;
 			}
 
 		// AAA / AAS / DAA / DAS
 
 		OP_ID = OP_ADJUST1 + op_desc->seg1;
-		err = 0;
 		break;
 		}
 
