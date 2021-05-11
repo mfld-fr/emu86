@@ -1509,6 +1509,43 @@ static int op_leave (op_desc_t * op_desc)
 	return 0;
 	}
 
+
+// Adjust 2 operations (AAM, AAD)
+
+static int op_adjust2 (op_desc_t * op_desc)
+	{
+	assert (op_desc->var_count == 1);
+
+	word_t id = OP_ID;
+
+	op_var_t * var = &op_desc->var_to;
+	assert (var->type == VT_IMM);
+	
+	byte_t tempAL = reg8_get(REG_AL);
+	byte_t tempAH = reg8_get(REG_AH);
+
+	switch (id)
+		{
+		case OP_AAM:
+			tempAH = tempAL / var->val.b;
+			tempAL %= var->val.b;
+			break;
+
+		case OP_AAD:
+			tempAL += tempAH * var->val.b;
+			tempAH = 0;
+			break;
+
+		default:
+			assert (0);
+		}
+
+	reg8_set(REG_AL, tempAL);
+	reg8_set(REG_AH, tempAH);	
+
+	return 0;
+	}
+
 // Table of operation handlers
 
 typedef int (* op_hand_t) (op_desc_t * op_desc);
@@ -1613,8 +1650,8 @@ static op_id_hand_t _id_hand_tab [] = {
 	{ OP_LOOP,     op_loop      },
 	{ OP_JCXZ,     op_loop      },
 
-	{ OP_AAM,      NULL         },
-	{ OP_AAD,      NULL         },
+	{ OP_AAM,      op_adjust2   },
+	{ OP_AAD,      op_adjust2   },
 
 	{ OP_CBW,      op_convert   },
 	{ OP_CWD,      op_convert   },

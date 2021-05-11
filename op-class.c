@@ -976,7 +976,7 @@ static int class_1_C0h (byte_t code, op_desc_t * op_desc)
 				if (!(code & 0x02))
 					{
 					OP_ID = OP_ADJUST2 + op_desc->w2;
-					err = 0;
+					err = class_imm(CF_1, op_desc);
 					break;
 					}
 
