@@ -21,8 +21,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: setup
-      run: sudo apt install libsdl2-dev
+    - name: setup-1
+      run: sudo apt-get update
+    - name: setup-2
+      run: sudo apt-get install libsdl2-dev
     - uses: actions/checkout@v2
     - name: config
       run: cp config-elks.mk config.mk
