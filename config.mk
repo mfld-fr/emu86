@@ -5,9 +5,9 @@
 # advtech: Advantech SNMP-1000 SBC
 # pcxtat:  legacy PC/XT/AT (experimental)
 
+TARGET=pcxtat
 #TARGET=elks
 #TARGET=advtech
-TARGET=pcxtat
 
 # Platform selection
 # terminal:   standard 
