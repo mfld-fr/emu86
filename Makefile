@@ -97,11 +97,11 @@ endif
 
 ifeq ($(TARGET), elks)
 	CFLAGS += -DELKS
-	EMU86_OBJS += rom-elks.o
+	EMU86_OBJS += rom-bios.o rom-elks.o
 endif
 
 ifeq ($(TARGET), pcxtat)
-	EMU86_OBJS += rom-pcxtat.o
+	EMU86_OBJS += rom-bios.o rom-pcxtat.o
 	TARGET = elks
 endif
 

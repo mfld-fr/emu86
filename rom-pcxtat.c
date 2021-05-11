@@ -14,13 +14,12 @@
 #include "emu-con.h"
 #include "emu-int.h"
 #include "mem-io-elks.h"
+#include "rom-bios.h"
 
 extern int info_level;
 
 
 // BIOS video services
-
-#define BDA_VIDEO_MODE 0x0449
 
 #define FG_WHITE 0x07
 #define BG_BLACK 0x00
@@ -773,6 +772,10 @@ static void bios_check (addr_t b, int size)
 
 void rom_init (void)
 	{
+	// Generic BIOS
+
+	rom_init_0 ();
+
 	// ELKS saves and calls initial INT 08h (timer)
 	// So implement a stub for INT 08h that just EOI
 	// Starting @ F000:1000h

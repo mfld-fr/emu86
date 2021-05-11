@@ -14,6 +14,8 @@
 #include "emu-con.h"
 #include "emu-int.h"
 #include "mem-io-elks.h"
+#include "rom-bios.h"
+
 
 extern int info_level;
 
@@ -596,6 +598,10 @@ static void bios_check (addr_t b, int size)
 
 void rom_init (void)
 	{
+	// Generic BIOS
+
+	rom_init_0 ();
+
 	// ELKS saves and calls initial INT 08h (timer)
 	// So implement a stub for INT 08h that just EOI
 	// Starting @ F000:1000h
