@@ -51,7 +51,7 @@ static int file_load (addr_t start, char * path)
 			break;
 			}
 
-		printf ("info: file size=%lXh\n", size);
+		printf ("info: file size=%lXh\n", (unsigned long) size);
 		if (start + size > MEM_MAX)
 			{
 			puts ("fatal: file too big");
