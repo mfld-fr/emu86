@@ -7,7 +7,10 @@
 // EGA/MDA Adaptor
 
 #define VID_BASE		0xB8000		// EGA
+#define VID_MODE		3
 //#define VID_BASE		0xB0000		// MDA (mono)
+//#define VID_MODE		7
+
 #define VID_COLS		80
 #define VID_LINES		25
 #define VID_SIZE		0x4000		// 16k

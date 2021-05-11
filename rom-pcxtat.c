@@ -98,23 +98,17 @@ static int int_10h ()
 		case 0x05:
 			break;
 
-		// Scroll up
+		// Scroll up/down
 
-		case 0x06:
+		case 0x06:		// up
+		case 0x07:		// down
 			n = reg8_get (REG_AL); 	// # lines
 			at = reg8_get (REG_BH); // attribute
 			r = reg8_get (REG_CH);  // upper L/R
 			c = reg8_get (REG_CL);
 			r2 = reg8_get (REG_DH);	// lower L/R
 			c2 = reg8_get (REG_DL);
-			con_scrollup (n, at, r, c, r2, c2);
-			break;
-
-		// Scroll down
-
-		case 0x07:
-			puts ("\nwarning: INT 10h AH=07h: no scroll up supported");
-			//con_scrolldown();
+			con_scroll (ah == 0x07, n, at, r, c, r2, c2);
 			break;
 
 		// Read character at current cursor position
@@ -845,7 +839,7 @@ void rom_init (void)
 	// BIOS Data Area (BDA) setup for EGA/MDA adaptors
 
 	memset (mem_stat+BDA_BASE, 0x00, 256);
-	mem_stat [BDA_VIDEO_MODE] = 3;  // color 80x25 character (EGA)
+	mem_stat [BDA_VIDEO_MODE] = VID_MODE;  // video mode (3=EGA 7=MDA)
 	*(byte_t *) (mem_stat+BDA_BASE+0x4a) =  VID_COLS;		// console width
 	*(word_t *) (mem_stat+BDA_BASE+0x4c) =  VID_PAGE_SIZE;	// page size
 	*(word_t *) (mem_stat+BDA_BASE+0x63) =  CRTC_CTRL_PORT;	// 6845 CRTC
