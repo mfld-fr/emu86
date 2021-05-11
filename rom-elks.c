@@ -386,24 +386,25 @@ static int int_16h ()
 			break;
 
 		// Peek character
-		// FIXME: buggy around key_prev
 
 		case 0x01:
-			if (con_poll_key ())
+			// Do we have a character previously read?
+			if (key_prev == 0)
 				{
-				flag_set (FLAG_ZF, 0);
+				// Nope, ask the console for a new one
+				if (!con_poll_key ())
+					{
+						flag_set (FLAG_ZF, 1);  // no character in queue
+						break;
+					}
 
 				err = con_get_key (&key_prev);
 				if (err) break;
-
-				reg8_set (REG_AL, (byte_t) key_prev);
-				reg8_set (REG_AH, 0);
-				}
-			else
-				{
-				flag_set (FLAG_ZF, 1);  // no character in queue
 				}
 
+			flag_set (FLAG_ZF, 0);
+			reg8_set (REG_AL, (byte_t) key_prev);
+			reg8_set (REG_AH, 0);  // no scan code
 			break;
 
 		// Set typematic rate - ignore
