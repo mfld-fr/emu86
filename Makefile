@@ -2,7 +2,7 @@
 
 include config.mk
 
-CFLAGS = -g -Wall
+CFLAGS = -g -Wall -Werror
 PREFIX = /usr/local
 
 # EMU86 main program
