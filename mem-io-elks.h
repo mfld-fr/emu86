@@ -3,13 +3,7 @@
 
 #include "emu-types.h"
 
-
-// EGA/MDA Adaptor
-
-#define VID_BASE		0xB8000		// EGA
-#define VID_MODE		3
-//#define VID_BASE		0xB0000		// MDA (mono)
-//#define VID_MODE		7
+// Video
 
 #define VID_COLS		80
 #define VID_LINES		25
@@ -35,5 +29,7 @@
 extern byte_t crtc_curhi, crtc_curlo;
 extern int vid_minx, vid_miny;
 extern int vid_maxx, vid_maxy;
+
+int vid_base(void);
 void update_dirty_region (int x, int y);
 void reset_dirty_region ();

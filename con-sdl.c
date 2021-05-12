@@ -35,9 +35,6 @@ extern MWIMAGEBITS rom8x16_bits[];
 #define ATTR_BOLD    0x0800
 #define ATTR_FGCOLOR 0x0700
 
-#define FG_WHITE 0x07
-#define BG_BLACK 0x00
-
 static SDL_Window *sdlWindow;
 static SDL_Renderer *sdlRenderer;
 static SDL_Texture *sdlTexture;
@@ -45,39 +42,14 @@ static float sdlZoom = 1.0;
 static unsigned char *screen;
 static int curx, cury;
 
-
 #define RGBDEF(r,g,b)	{ r,g,b,255 }
 struct rgba { unsigned char r, g, b, a; };
 
-#if VID_MODE == 7
-
-// MDA palette for attribute mapping
-static struct rgba EGA_COLORMAP[16] = {
-	RGBDEF( 0  , 0  , 0   ),	/* black*/
-	RGBDEF( 0  , 192, 0   ),	/* blue*/
-	RGBDEF( 0  , 192, 0   ),	/* green*/
-	RGBDEF( 0  , 192, 0   ),	/* cyan*/
-	RGBDEF( 0  , 192, 0   ),	/* red*/
-	RGBDEF( 0  , 192, 0   ),	/* magenta*/
-	RGBDEF( 0  , 192, 0   ),	/* adjusted brown*/
-	RGBDEF( 0  , 192, 0   ),	/* ltgray*/
-	RGBDEF( 0  , 0  , 0   ),	/* gray*/
-	RGBDEF( 0  , 255, 0   ),	/* ltblue*/
-	RGBDEF( 0  , 255, 0   ),	/* ltgreen*/
-	RGBDEF( 0  , 255, 0   ),	/* ltcyan*/
-	RGBDEF( 0  , 255, 0   ),	/* ltred*/
-	RGBDEF( 0  , 255, 0   ),	/* ltmagenta*/
-	RGBDEF( 0  , 255, 0   ),	/* yellow*/
-	RGBDEF( 0  , 255, 0   ),	/* white*/
-};
-
-#else
-
 // 16 color EGA palette for attribute mapping
 static struct rgba EGA_COLORMAP[16] = {
-	RGBDEF( 0  , 0  , 0   ),	/* black*/
+	RGBDEF( 0  , 0  , 0   ),	/* 0 black*/
 	RGBDEF( 0  , 0  , 192 ),	/* blue*/
-	RGBDEF( 0  , 192, 0   ),	/* green*/
+	RGBDEF( 0  , 192, 0   ),	/* 2 green*/
 	RGBDEF( 0  , 192, 192 ),	/* cyan*/
 	RGBDEF( 192, 0  , 0   ),	/* red*/
 	RGBDEF( 192, 0  , 192 ),	/* magenta*/
@@ -85,14 +57,18 @@ static struct rgba EGA_COLORMAP[16] = {
 	RGBDEF( 192, 192, 192 ),	/* ltgray*/
 	RGBDEF( 128, 128, 128 ),	/* gray*/
 	RGBDEF( 0  , 0  , 255 ),	/* ltblue*/
-	RGBDEF( 0  , 255, 0   ),	/* ltgreen*/
+	RGBDEF( 0  , 255, 0   ),	/* 10 ltgreen*/
 	RGBDEF( 0  , 255, 255 ),	/* ltcyan*/
 	RGBDEF( 255, 0  , 0   ),	/* ltred*/
 	RGBDEF( 255, 0  , 255 ),	/* ltmagenta*/
 	RGBDEF( 255, 255, 0   ),	/* yellow*/
 	RGBDEF( 255, 255, 255 ),	/* white*/
 };
-#endif
+
+// EGA colormap indexes for MDA
+#define MDA_BLACK	0
+#define MDA_GREEN	2
+#define MDA_LTGREEN	10
 
 
 /* draw a character bitmap*/
@@ -104,20 +80,23 @@ static void sdl_drawbitmap(int c, int x, int y)
     int bitcount = 0;
 	unsigned short bitvalue = 0;
 	int height = CHAR_HEIGHT;
+	int fg_color, bg_color;
 
-#if VID_MODE == 7
-	// Special MDA handling
-	// 0x00, 0x08, 0x80, 0x88 (blank) -> 0x00, otherwise 0x07
-	// 0x70, 0x78, 0xF0, 0xF8 (reverse video) -> 0x70, otherwise 0x07
-	// MDA requires attribute 0x0700 for reverse video
-	if ((c & 0x7700) != 0x7000 && (c & 0x7700) != 0x0000) {
-		c |= ATTR_FGCOLOR;
-		c &= ~ATTR_BGCOLOR;
+	if (vid_base() == 0xB0000) {	// MDA
+		if ((c & 0x7700) == 0)
+			fg_color = bg_color = MDA_BLACK;
+		else if ((c & 0x7700) == 0x7000) {
+			fg_color = MDA_BLACK;
+			bg_color = MDA_GREEN;
+		} else {
+			fg_color = (c & ATTR_BOLD)? MDA_LTGREEN: MDA_GREEN;
+			bg_color = MDA_BLACK;
+		}
+	} else {						// EGA
+		fg_color = (c & ATTR_FGCOLOR) >> 8;
+		if (c & ATTR_BOLD) fg_color += 8;
+		bg_color = (c & ATTR_BGCOLOR) >> 12;
 	}
-#endif
-	int fg_color = (c & ATTR_FGCOLOR) >> 8;
-	if (c & ATTR_BOLD) fg_color += 8;
-	int bg_color = (c & ATTR_BGCOLOR) >> 12;
 	unsigned char fg_r = EGA_COLORMAP[fg_color].r;
 	unsigned char fg_g = EGA_COLORMAP[fg_color].g;
 	unsigned char fg_b = EGA_COLORMAP[fg_color].b;
@@ -159,7 +138,7 @@ static void sdl_drawbitmap(int c, int x, int y)
 static void draw_video_ram(int sx, int sy, int ex, int ey)
 {
 	int x, y;
-	word_t *vidram = (word_t *)&mem_stat[VID_BASE];
+	word_t *vidram = (word_t *)&mem_stat[vid_base()];
 
 	for (y = sy; y < ey; y++)
 	{
@@ -192,7 +171,7 @@ static void clear_line(int x1, byte_t x2, byte_t y, byte_t attr)
 	int x;
 
 	for (x = x1; x <= x2; x++) {
-		*(word_t *)&mem_stat[VID_BASE + (y * VID_COLS + x) * 2] = ' ' | (attr << 8);
+		*(word_t *)&mem_stat[vid_base() + (y * VID_COLS + x) * 2] = ' ' | (attr << 8);
 		update_dirty_region(x, y);
 	}
 }
@@ -201,7 +180,7 @@ static void clear_line(int x1, byte_t x2, byte_t y, byte_t attr)
 static void scrollup(int y1, int y2, byte_t attr)
 {
 	int pitch = VID_COLS * 2;
-	byte_t *vid = mem_stat + VID_BASE + y1 * pitch;
+	byte_t *vid = mem_stat + vid_base() + y1 * pitch;
 
 	memcpy(vid, vid + pitch, (VID_LINES - y1) * pitch);
 	clear_line (0, VID_COLS-1, y2, attr);
@@ -214,7 +193,7 @@ static void scrollup(int y1, int y2, byte_t attr)
 static void scrolldn(int y1, int y2, byte_t attr)
 {
 	int pitch = VID_COLS * 2;
-	byte_t *vid = mem_stat + VID_BASE + (VID_LINES-1) * pitch;
+	byte_t *vid = mem_stat + vid_base() + (VID_LINES-1) * pitch;
 	int y = y2;
 
 	while (--y >= y1) {
@@ -239,8 +218,8 @@ void sdl_textout(byte_t c, byte_t a)
 	case '\n':  goto scroll;
 	}
 
-	mem_stat [VID_BASE + (cury * VID_COLS + curx) * 2 + 0] = c;
-	mem_stat [VID_BASE + (cury * VID_COLS + curx) * 2 + 1] = a;
+	mem_stat [vid_base() + (cury * VID_COLS + curx) * 2 + 0] = c;
+	mem_stat [vid_base() + (cury * VID_COLS + curx) * 2 + 1] = a;
 
 	update_dirty_region (curx, cury);
 
@@ -248,7 +227,7 @@ void sdl_textout(byte_t c, byte_t a)
 		curx = 0;
 scroll:
 		if (++cury >= VID_LINES) {
-			scrollup(0, VID_LINES - 1, FG_WHITE | BG_BLACK);
+			scrollup(0, VID_LINES - 1, ATTR_NORMAL);
 			cury = VID_LINES - 1;
 		}
 	}
