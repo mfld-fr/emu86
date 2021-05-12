@@ -54,7 +54,8 @@ also known as 'Linux 8086', in a minimal PC/XT/AT configuration.
 It is also able to emulate the Advantech SNMP-1000, an SBC based on the R8810 MCU,
 that is a 80188 clone but with with its specific interrupt controller, timer and serial port.
 
-And last but not least, it is now able to boot MSDOS & FreeDOS (experimental).
+And last but not least, it is now able to boot MSDOS 6.22 & FreeDOS,
+but this is rather a test case for EMU86 than an intended use.
 
 Any addition to support more embbeded systems based on IA16 is welcome.
 
@@ -84,7 +85,7 @@ To build and run browser version (requires ELKS):
 
 ## TO DO LIST
 
-* Some IA16 instructions are rarely used and not implemented yet
+* Some IA16 instructions are rarely used and so not implemented yet
 * More emulation of the 80188 and R8810 MCUs
 * Add EEPROM / Flash emulation for complete emulation before burning on real device
 * See also the list of GitHub issues

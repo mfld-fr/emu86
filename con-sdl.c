@@ -18,16 +18,14 @@
 #include "mem-io-elks.h"
 
 /* configurable parameters*/
-#define COLS		80
-#define LINES		25
 #define CHAR_WIDTH	8
 #define CHAR_HEIGHT	16
 #define BPP			32			/* bits per pixel*/
 extern MWIMAGEBITS rom8x16_bits[];
 
 /* calculated parameters*/
-#define WIDTH		(COLS * CHAR_WIDTH)
-#define HEIGHT		(LINES * CHAR_HEIGHT)
+#define WIDTH		(VID_COLS * CHAR_WIDTH)
+#define HEIGHT		(VID_LINES * CHAR_HEIGHT)
 #define PITCH		(WIDTH * (BPP >> 3))
 
 /* display attributes*/
@@ -44,15 +42,14 @@ static float sdlZoom = 1.0;
 static unsigned char *screen;
 static int curx, cury;
 
-
 #define RGBDEF(r,g,b)	{ r,g,b,255 }
 struct rgba { unsigned char r, g, b, a; };
 
 // 16 color EGA palette for attribute mapping
 static struct rgba EGA_COLORMAP[16] = {
-	RGBDEF( 0  , 0  , 0   ),	/* black*/
+	RGBDEF( 0  , 0  , 0   ),	/* 0 black*/
 	RGBDEF( 0  , 0  , 192 ),	/* blue*/
-	RGBDEF( 0  , 192, 0   ),	/* green*/
+	RGBDEF( 0  , 192, 0   ),	/* 2 green*/
 	RGBDEF( 0  , 192, 192 ),	/* cyan*/
 	RGBDEF( 192, 0  , 0   ),	/* red*/
 	RGBDEF( 192, 0  , 192 ),	/* magenta*/
@@ -60,13 +57,19 @@ static struct rgba EGA_COLORMAP[16] = {
 	RGBDEF( 192, 192, 192 ),	/* ltgray*/
 	RGBDEF( 128, 128, 128 ),	/* gray*/
 	RGBDEF( 0  , 0  , 255 ),	/* ltblue*/
-	RGBDEF( 0  , 255, 0   ),	/* ltgreen*/
+	RGBDEF( 0  , 255, 0   ),	/* 10 ltgreen*/
 	RGBDEF( 0  , 255, 255 ),	/* ltcyan*/
 	RGBDEF( 255, 0  , 0   ),	/* ltred*/
 	RGBDEF( 255, 0  , 255 ),	/* ltmagenta*/
 	RGBDEF( 255, 255, 0   ),	/* yellow*/
 	RGBDEF( 255, 255, 255 ),	/* white*/
 };
+
+// EGA colormap indexes for MDA
+#define MDA_BLACK	0
+#define MDA_GREEN	2
+#define MDA_LTGREEN	10
+
 
 /* draw a character bitmap*/
 static void sdl_drawbitmap(int c, int x, int y)
@@ -77,10 +80,23 @@ static void sdl_drawbitmap(int c, int x, int y)
     int bitcount = 0;
 	unsigned short bitvalue = 0;
 	int height = CHAR_HEIGHT;
+	int fg_color, bg_color;
 
-	int fg_color = (c & ATTR_FGCOLOR) >> 8;
-	if (c & ATTR_BOLD) fg_color += 8;
-	int bg_color = (c & ATTR_BGCOLOR) >> 12;
+	if (vid_base() == 0xB0000) {	// MDA
+		if ((c & 0x7700) == 0)
+			fg_color = bg_color = MDA_BLACK;
+		else if ((c & 0x7700) == 0x7000) {
+			fg_color = MDA_BLACK;
+			bg_color = MDA_GREEN;
+		} else {
+			fg_color = (c & ATTR_BOLD)? MDA_LTGREEN: MDA_GREEN;
+			bg_color = MDA_BLACK;
+		}
+	} else {						// EGA
+		fg_color = (c & ATTR_FGCOLOR) >> 8;
+		if (c & ATTR_BOLD) fg_color += 8;
+		bg_color = (c & ATTR_BGCOLOR) >> 12;
+	}
 	unsigned char fg_r = EGA_COLORMAP[fg_color].r;
 	unsigned char fg_g = EGA_COLORMAP[fg_color].g;
 	unsigned char fg_b = EGA_COLORMAP[fg_color].b;
@@ -122,11 +138,11 @@ static void sdl_drawbitmap(int c, int x, int y)
 static void draw_video_ram(int sx, int sy, int ex, int ey)
 {
 	int x, y;
-	word_t *vidram = (word_t *)&mem_stat[VID_BASE];
+	word_t *vidram = (word_t *)&mem_stat[vid_base()];
 
 	for (y = sy; y < ey; y++)
 	{
-		int j = y * COLS + sx;
+		int j = y * VID_COLS + sx;
 		for (x = sx; x < ex; x++)
 		{
 			sdl_drawbitmap(vidram[j], x * CHAR_WIDTH, y * CHAR_HEIGHT);
@@ -140,7 +156,7 @@ static void cursoron(void)
 {
 	mem_stat[BDA_BASE+0x50] = curx;
 	mem_stat[BDA_BASE+0x51] = cury;
-	int pos = cury * COLS + curx;
+	int pos = cury * VID_COLS + curx;
 	crtc_curhi = pos >> 8;
 	crtc_curlo = pos & 0xff;
 }
@@ -149,17 +165,44 @@ static void cursoroff(void)
 {
 }
 
-
-// scroll adapter RAM
-static void scrollup(void)
+// clear line y from x1 up to and including x2 to attribute attr
+static void clear_line(int x1, byte_t x2, byte_t y, byte_t attr)
 {
-	int pitch = COLS * 2;
-	byte_t *vid = mem_stat + VID_BASE;
+	int x;
 
-	memcpy(vid, vid + pitch, (LINES-1) * pitch);
-	memset(vid + (LINES-1) * pitch, 0, pitch);
+	for (x = x1; x <= x2; x++) {
+		*(word_t *)&mem_stat[vid_base() + (y * VID_COLS + x) * 2] = ' ' | (attr << 8);
+		update_dirty_region(x, y);
+	}
+}
+
+// scroll adapter RAM up from line y1 up to and including line y2
+static void scrollup(int y1, int y2, byte_t attr)
+{
+	int pitch = VID_COLS * 2;
+	byte_t *vid = mem_stat + vid_base() + y1 * pitch;
+
+	memcpy(vid, vid + pitch, (VID_LINES - y1) * pitch);
+	clear_line (0, VID_COLS-1, y2, attr);
 	update_dirty_region (0, 0);
-	update_dirty_region (COLS-1, LINES-1);
+	update_dirty_region (VID_COLS-1, VID_LINES-1);
+}
+
+
+// scroll adapter RAM down from line y1 up to and including line y2
+static void scrolldn(int y1, int y2, byte_t attr)
+{
+	int pitch = VID_COLS * 2;
+	byte_t *vid = mem_stat + vid_base() + (VID_LINES-1) * pitch;
+	int y = y2;
+
+	while (--y >= y1) {
+		memcpy (vid, vid - pitch, pitch);
+		vid -= pitch;
+	}
+	clear_line (0, VID_COLS-1, y1, attr);
+	update_dirty_region (0, 0);
+	update_dirty_region (VID_COLS-1, VID_LINES-1);
 }
 
 
@@ -175,17 +218,17 @@ void sdl_textout(byte_t c, byte_t a)
 	case '\n':  goto scroll;
 	}
 
-	mem_stat [VID_BASE + (cury * COLS + curx) * 2 + 0] = c;
-	mem_stat [VID_BASE + (cury * COLS + curx) * 2 + 1] = a;
+	mem_stat [vid_base() + (cury * VID_COLS + curx) * 2 + 0] = c;
+	mem_stat [vid_base() + (cury * VID_COLS + curx) * 2 + 1] = a;
 
 	update_dirty_region (curx, cury);
 
-	if (++curx >= COLS) {
+	if (++curx >= VID_COLS) {
 		curx = 0;
 scroll:
-		if (++cury >= LINES) {
-			scrollup();
-			cury = LINES - 1;
+		if (++cury >= VID_LINES) {
+			scrollup(0, VID_LINES - 1, ATTR_NORMAL);
+			cury = VID_LINES - 1;
 		}
 	}
 
@@ -222,20 +265,18 @@ int con_pos_get (byte_t *row, byte_t *col)
 	}
 
 
-int con_scrollup (byte_t n, byte_t at, byte_t r, byte_t c, byte_t r2, byte_t c2)
+int con_scroll (int dn, byte_t n, byte_t at, byte_t r, byte_t c, byte_t r2, byte_t c2)
 	{
-	byte_t x;
-
 	cursoroff();
 	if (n == 0 || n >= VID_LINES)
+		clear_line(c, c2, r, at);
+	else if (r != r2)
 		{
-			for (x = c; x <= c2; x++) {
-				*(word_t *)&mem_stat[VID_BASE + (r * VID_COLS + x) * 2] = ' ' | 0x0700;
-				update_dirty_region(x, r);
-			}
+		// FIXME count n, c, c2 ignored
+		if (dn)
+			scrolldn(r, r2, at);
+		else scrollup(r, r2, at);
 		}
-		else if (r != r2)
-			scrollup();
 	cursoron();
 	return 0;
 	}
@@ -372,8 +413,8 @@ int con_proc ()
 		{
 		// draw cursor
 		int pos = (crtc_curhi << 8) | crtc_curlo;
-		int y = pos / COLS;
-		int x = pos % COLS;
+		int y = pos / VID_COLS;
+		int x = pos % VID_COLS;
 		if (lastx != x || lasty != y || needscursor)
 			{
 			// remove last cursor

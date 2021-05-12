@@ -56,16 +56,17 @@ static int int_10h ()
 		case 0x05:		// FIXME page required for multiple consoles
 			break;
 
-		// Scroll up
+		// Scroll up/down
 
-		case 0x06:
+		case 0x06:		// up
+		case 0x07:		// down
 			n = reg8_get (REG_AL); 	// # lines
 			at = reg8_get (REG_BH); // attribute
 			r = reg8_get (REG_CH);  // upper L/R
 			c = reg8_get (REG_CL);
 			r2 = reg8_get (REG_DH);	// lower L/R
 			c2 = reg8_get (REG_DL);
-			con_scrollup (n, at, r, c, r2, c2);
+			con_scroll (ah == 0x07, n, at, r, c, r2, c2);
 			break;
 
 		// Write character and attribute at current cursor position
@@ -336,7 +337,7 @@ static int int_13h ()
 			reg8_set (REG_CL, dp->sectors | (((c >> 8) & 0x03) << 6));
 			reg8_set (REG_DH, dp->heads - 1);
 			seg_set (SEG_ES, 0xFF00);   // fake DDPT, same as INT 1Eh
-			reg16_set (REG_DI, 0x0000);
+			reg16_set (REG_DI, 0x0000);	// FIXME wrong address
 			err = 0;
 			break;
 
@@ -554,10 +555,10 @@ void rom_init (void)
 	// BIOS Data Area (BDA) setup for EGA/MDA adaptors
 
 	memset (mem_stat+BDA_BASE, 0x00, 256);
-	*(byte_t *) (mem_stat+BDA_BASE+0x49) =  3; 				// video mode (3= EGA 7=MDA)
+	mem_stat [BDA_VIDEO_MODE] = 3;  // video mode (3=EGA 7=MDA)
 	*(byte_t *) (mem_stat+BDA_BASE+0x4a) =  VID_COLS;		// console width
 	*(word_t *) (mem_stat+BDA_BASE+0x4c) =  VID_PAGE_SIZE;	// page size
 	*(word_t *) (mem_stat+BDA_BASE+0x63) =  CRTC_CTRL_PORT;	// 6845 CRTC
 
-	memset (mem_stat+VID_BASE, 0x00, VID_PAGE_SIZE);		// clear text RAM
+	memset (mem_stat+vid_base(), 0x00, VID_PAGE_SIZE);		// clear text RAM
 	}

@@ -1,9 +1,9 @@
 # EMU86 configuration
 
 # Target selection
+# pcxtat:  legacy PC/XT/AT
 # elks:    minimal PC to run ELKS
 # advtech: Advantech SNMP-1000 SBC
-# pcxtat:  legacy PC/XT/AT (experimental)
 
 TARGET=pcxtat
 #TARGET=elks
