@@ -278,7 +278,7 @@ static int class_reg (byte_t flags, op_desc_t * op)
 	}
 
 
-static void class_seg (byte_t __attribute__((unused)) flags, op_desc_t * op)
+static int class_seg (byte_t __attribute__((unused)) flags, op_desc_t * op)
 	{
 	op->var_count = 1;
 
@@ -287,6 +287,8 @@ static void class_seg (byte_t __attribute__((unused)) flags, op_desc_t * op)
 	var_seg->type = VT_SEG;
 	var_seg->w = 1;
 	var_seg->val.r = op->seg1;
+
+	return 0;
 	}
 
 
@@ -611,7 +613,7 @@ static byte_t fetch_code_2 (op_desc_t * op_desc)
 
 static int class_1_00h (byte_t code, op_desc_t * op_desc)
 	{
-	int err = 0;
+	int err = -1;
 
 	while (1)
 		{
@@ -638,30 +640,30 @@ static int class_1_00h (byte_t code, op_desc_t * op_desc)
 
 		if (!(code & 0x20))
 			{
-			// POP CS has no sense - Issue #4
+			// Issue #4: POP CS has no sense
 
 			if (code == 0x0F)
 				{
 				puts ("\nerror: insane POP CS (0Fh)");
-				err = -1;
 				break;
 				}
 
 			OP_ID = OP_STACK1 + (code & 0x01);
-			class_seg (0, op_desc);
+			err = class_seg (0, op_desc);
 			break;
 			}
 
 		if (!(code & 0x01))
 			{
 			OP_ID = OP_SEG;
-			class_seg (0, op_desc);
+			err = class_seg (0, op_desc);
 			break;
 			}
 
 		// AAA / AAS / DAA / DAS
 
 		OP_ID = OP_ADJUST1 + op_desc->seg1;
+		err = 0;
 		break;
 		}
 
@@ -689,45 +691,43 @@ static int class_1_40h (byte_t code, op_desc_t * op_desc)
 			err = class_reg (0, op_desc);
 			break;
 
-		// Unknown opcodes for 8086
-		// Only for 80186
+		// Only for 80186 (6xh)
 
 		case 0x20:
-			if (code & 0x0E)
+			if (!(code & 0x0E))
 				{
-				if (code == 0x68) {
-					OP_ID = OP_PUSH;
-					err = class_imm (CF_2, op_desc);
-					break;
-					}
+				// PUSHA / POPA
+				// 0x60h / 0x61h
 
-				else if (code == 0x6A) {
-					OP_ID = OP_PUSH;
-					err = class_imm (CF_1, op_desc);
-					break;
-					}
-
-				// TODO: complete with 80186 opcodes
-				// 0x62: BOUND
-				// 0x69: IMUL imm16
-				// 0x6B: IMUL imm8
-				// 0x6C: INS p8
-				// 0x6D: INS p16
-				// 0x6E: OUTS p8
-				// 0x6F: OUTS p16
-
-				err = -1;
+				OP_ID = OP_STACK2 + op_desc->w2;
+				err = 0;
 				break;
 				}
 
-			// PUSHA / POPA
-			// 0x60h / 0x61h
+			if (code == 0x68) {
+				OP_ID = OP_PUSH;
+				err = class_imm (CF_2, op_desc);
+				break;
+				}
 
-			OP_ID = OP_STACK2 + op_desc->w2;
-			err = 0;
+			if (code == 0x6A) {
+				OP_ID = OP_PUSH;
+				err = class_imm (CF_1, op_desc);
+				break;
+				}
+
+			// TODO: complete with 80186 opcodes
+			// 0x62: BOUND
+			// 0x69: IMUL imm16
+			// 0x6B: IMUL imm8
+			// 0x6C: INS p8
+			// 0x6D: INS p16
+			// 0x6E: OUTS p8
+			// 0x6F: OUTS p16
+
 			break;
 
-		// Conditional jumps (0x70-0x7F)
+		// Conditional jumps (7xh)
 
 		case 0x30:
 			OP_ID = OP_JUMP + (code & 0x0F);
@@ -896,6 +896,8 @@ static int class_1_C0h (byte_t code, op_desc_t * op_desc)
 					{
 					if (!(code & 0x02))
 						{
+						// Only for 80186 (C0h-C1h)
+
 						code_2 = fetch_code_2 (op_desc);
 						OP_ID = OP_BITS + op_desc->reg2;
 						err = class_w_mod_rm_count (0, op_desc);
@@ -933,16 +935,17 @@ static int class_1_C0h (byte_t code, op_desc_t * op_desc)
 				{
 				if (!(code & 0x02))
 					{
-					if (code == 0xc8)
+					// Only for 80186
+
+					if (code == 0xC8)
 						{
-							OP_ID = OP_ENTER;
-							err = class_imm_imm(CF_2, CF_1, op_desc);
+						OP_ID = OP_ENTER;
+						err = class_imm_imm (CF_2, CF_1, op_desc);
+						break;
 						}
-						else
-						{
-							OP_ID = OP_LEAVE;
-							err = 0;
-						}
+
+					OP_ID = OP_LEAVE;  // C9h
+					err = 0;
 					break;
 					}
 
@@ -959,7 +962,7 @@ static int class_1_C0h (byte_t code, op_desc_t * op_desc)
 				}
 
 			OP_ID = OP_INTS + (code & 0x03);
-			if ((code & 0x03) == 0x01)
+			if (code == 0xCD)  // INT imm8
 				{
 				err = class_imm (CF_1, op_desc);
 				break;
@@ -982,7 +985,7 @@ static int class_1_C0h (byte_t code, op_desc_t * op_desc)
 				if (!(code & 0x02))
 					{
 					OP_ID = OP_ADJUST2 + op_desc->w2;
-					err = class_imm(CF_1, op_desc);
+					err = class_imm (CF_1, op_desc);
 					break;
 					}
 
@@ -991,7 +994,10 @@ static int class_1_C0h (byte_t code, op_desc_t * op_desc)
 				break;
 				}
 
-			OP_ID = OP_ESC;  // TODO: extract (reg1) (reg2)
+			// FPU instruction
+			// FPU opcode in (reg1) (reg2)
+
+			OP_ID = OP_ESC;
 			code_2 = fetch_code_2 (op_desc);
 			err = class_mod_rm (0, op_desc);
 			break;
