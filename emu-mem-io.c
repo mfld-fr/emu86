@@ -24,10 +24,10 @@ void * mem_get_addr (addr_t a)
 	{
 	if (a >= MEM_MAX)
 		{
-		printf ("\nfatal: accessing out of memory @ %lXh\n", a);
-		// FIXME: hack to stop until error management
-		exit (0);
+		printf ("\nwarning: accessing out of memory @ %lXh\n", a);
 		}
+
+	a &= (MEM_MAX - 1);
 
 	// Data breakpoint test
 	// Will break the main execution loop later
