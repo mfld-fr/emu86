@@ -2,10 +2,6 @@
 // EMU86 - Advantech ROM stub (BIOS)
 //------------------------------------------------------------------------------
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <assert.h>
-
 #include "emu-mem-io.h"
 #include "emu-proc.h"
 #include "emu-serial.h"
@@ -13,9 +9,13 @@
 
 #include "int-advtech.h"
 
+#include <stdlib.h>
+#include <stdio.h>
+
 
 // BIOS time services
 // Hook to avoid using the RTC chip (not emulated yet)
+// and because DAA / DAS are not implemented yet
 
 static int int_1Ah ()
 	{
@@ -33,7 +33,7 @@ static int int_1Ah ()
 			break;
 
 		default:
-			printf ("error: INT 1Ah: AH=%hXh not implemented\n", ah);
+			printf ("\nerror: INT 1Ah AH=%hhXh not implemented\n", ah);
 			err = -1;
 			break;
 
@@ -48,6 +48,8 @@ static int int_1Ah ()
 
 static int int_60h ()
 	{
+	int err = 0;
+
 	byte_t ah = reg8_get (REG_AH);
 	switch (ah)
 		{
@@ -57,11 +59,11 @@ static int int_60h ()
 			break;
 
 		default:
-			printf ("fatal: INT 60h: AH=%hXh not implemented\n", ah);
-			assert (0);
+			printf ("\nerror: INT 60h AH=%hhXh not implemented\n", ah);
+			err = -1;
 		}
 
-	return 0;
+	return err;
 	}
 
 
@@ -70,25 +72,31 @@ static int int_60h ()
 
 static int int_D0h ()
 	{
+	int err = 0;
+
 	byte_t ah = reg8_get (REG_AH);
 	switch (ah)
 		{
-		// ADVTECH: NIC IO base
+		// ADVTECH: NIC I/O base
 
 		case 0x00:
 			reg16_set (REG_AX, 0x300);
 			break;
 
-		// ADVTECH: program select (DIP SW) ?
+		// ROM program select (DIP SW)
+		// 00b: PROG0
+		// 01b: PROG1 or MON86
+		// 10b: PROG2 = PROG0
+		// 11b: ROM TEST
 
 		case 0x01:
-			reg16_set (REG_AX, 1);  // program 01 -> MON86  11 -> TEST
+			reg16_set (REG_AX, 1);
 			break;
 
 		// No RTC emulated in EMU86
 
 		case 0x02:
-			puts ("info: INT D0h AH=02h: reporting no RTC");
+			puts ("\ninfo: INT D0h AH=02h: reporting no RTC");
 			reg16_set (REG_AX, 0);
 			break;
 
@@ -105,35 +113,11 @@ static int int_D0h ()
 			break;
 
 		default:
-			printf ("fatal: INT D0h: AH=%hXh not implemented\n", ah);
-			assert (0);
+			printf ("\nerror: INT D0h AH=%hhXh not implemented\n", ah);
+			err = -1;
 		}
 
-	return 0;
-	}
-
-
-// BIOS misc services
-// Advantech specific
-
-static int int_D2h ()
-	{
-	byte_t ah = reg8_get (REG_AH);
-	switch (ah)
-		{
-		case 0x00:  // LED
-			break;
-
-		case 0x02:  // set D2h_flag
-			break;
-
-		default:
-			printf ("fatal: INT D2h: AH=%hXh not implemented\n", ah);
-			assert (0);
-
-		}
-
-	return 0;
+	return err;
 	}
 
 
@@ -144,7 +128,6 @@ int_num_hand_t _int_tab [] = {
 	{ 0x1A, int_1Ah },
 	{ 0x60, int_60h },
 	{ 0xD0, int_D0h },
-	{ 0xD2, int_D2h },
 	{ 0,    NULL    }
 	};
 

@@ -16,26 +16,25 @@
 #include "emu-mem-io.h"
 #include "con-sdl.h"
 #include "mem-io-elks.h"
+#include "rom-bios.h"
+
 
 /* configurable parameters*/
-#define COLS		80
-#define LINES		25
 #define CHAR_WIDTH	8
 #define CHAR_HEIGHT	16
 #define BPP			32			/* bits per pixel*/
 extern MWIMAGEBITS rom8x16_bits[];
 
 /* calculated parameters*/
-#define WIDTH		(COLS * CHAR_WIDTH)
-#define HEIGHT		(LINES * CHAR_HEIGHT)
+#define WIDTH		(VID_COLS * CHAR_WIDTH)
+#define HEIGHT		(VID_LINES * CHAR_HEIGHT)
 #define PITCH		(WIDTH * (BPP >> 3))
 
 /* display attributes*/
-#define ATTR_OR     0x10000		// OR w/pixels (cursor)
-#define ATTR_BLINK   0x8000
-#define ATTR_BGCOLOR 0x7000
-#define ATTR_BOLD    0x0800
-#define ATTR_FGCOLOR 0x0700
+#define ATTR_BLINK   0x80
+#define ATTR_BGCOLOR 0x70
+#define ATTR_BRIGHT  0x08
+#define ATTR_FGCOLOR 0x07
 
 static SDL_Window *sdlWindow;
 static SDL_Renderer *sdlRenderer;
@@ -44,15 +43,15 @@ static float sdlZoom = 1.0;
 static unsigned char *screen;
 static int curx, cury;
 
-
-#define RGBDEF(r,g,b)	{ r,g,b,255 }
-struct rgba { unsigned char r, g, b, a; };
+#define RGBDEF(r,g,b)	{ r,g,b }
+struct rgb { unsigned char r, g, b; };
+typedef struct rgb rgb_s;
 
 // 16 color EGA palette for attribute mapping
-static struct rgba EGA_COLORMAP[16] = {
-	RGBDEF( 0  , 0  , 0   ),	/* black*/
+static rgb_s EGA_COLORMAP[16] = {
+	RGBDEF( 0  , 0  , 0   ),	/* 0 black*/
 	RGBDEF( 0  , 0  , 192 ),	/* blue*/
-	RGBDEF( 0  , 192, 0   ),	/* green*/
+	RGBDEF( 0  , 192, 0   ),	/* 2 green*/
 	RGBDEF( 0  , 192, 192 ),	/* cyan*/
 	RGBDEF( 192, 0  , 0   ),	/* red*/
 	RGBDEF( 192, 0  , 192 ),	/* magenta*/
@@ -60,7 +59,7 @@ static struct rgba EGA_COLORMAP[16] = {
 	RGBDEF( 192, 192, 192 ),	/* ltgray*/
 	RGBDEF( 128, 128, 128 ),	/* gray*/
 	RGBDEF( 0  , 0  , 255 ),	/* ltblue*/
-	RGBDEF( 0  , 255, 0   ),	/* ltgreen*/
+	RGBDEF( 0  , 255, 0   ),	/* 10 ltgreen*/
 	RGBDEF( 0  , 255, 255 ),	/* ltcyan*/
 	RGBDEF( 255, 0  , 0   ),	/* ltred*/
 	RGBDEF( 255, 0  , 255 ),	/* ltmagenta*/
@@ -68,25 +67,93 @@ static struct rgba EGA_COLORMAP[16] = {
 	RGBDEF( 255, 255, 255 ),	/* white*/
 };
 
+// EGA attribute to RGB
+
+static void attr_rgb_ega (byte_t attr, rgb_s * fg, rgb_s * bg)
+	{
+	int f;  // foreground color index
+	int b;  // background color index
+
+	f = attr & ATTR_FGCOLOR;
+	if (attr & ATTR_BRIGHT) f += 8;
+	b = (attr & ATTR_BGCOLOR) >> 4;
+
+	fg->r = EGA_COLORMAP [f].r;
+	fg->g = EGA_COLORMAP [f].g;
+	fg->b = EGA_COLORMAP [f].b;
+
+	bg->r = EGA_COLORMAP [b].r;
+	bg->g = EGA_COLORMAP [b].g;
+	bg->b = EGA_COLORMAP [b].b;
+	}
+
+
+// MDA attribute to RGB
+
+#define MDA_BRIGHT 0xFF
+#define MDA_NORMAL 0x9F
+#define MDA_DARK   0x3F
+
+static void attr_rgb_mda (byte_t attr, rgb_s * fg, rgb_s * bg)
+	{
+	int f;  // foreground intensity
+	int b;  // background intensity
+
+	// Attributes 00h, 08h, 80h and 88h display as black space
+	// So when x000x000b
+
+	if (!(attr & 0x77))
+		{
+		f = b = 0;
+		}
+
+	// Attributes 70h, 78h, F0h and F8h are special cases
+	// So when x111x000b
+
+	else if ((attr & 0x77) == 0x70)
+		{
+		// Attribute 70h displays as black on green
+		// Attribute 78h displays as dark green on green
+		// Attribute F0h displays as a blinking version of 70h (if blinking is enabled)
+		// or as black on bright green otherwise
+		// Attribute F8h displays as a blinking version of 78h (if blinking is enabled)
+		// or as dark green on bright green otherwise
+
+		f = (attr & 0x08) ? MDA_DARK : 0;
+		b = (attr & 0x80) ? MDA_BRIGHT : MDA_NORMAL;
+		}
+
+	// Normal case
+	// Bits 0-2: 1 = underline (ignored), other values = no underline
+	// Bit 3: high intensity
+	// Bit 7: blink (ignored)
+
+	else
+		{
+		f = (attr & ATTR_BRIGHT) ? MDA_BRIGHT : MDA_NORMAL;
+		b = 0;
+		}
+
+	fg->r = fg->g = fg->b = f;
+	bg->r = bg->g = bg->b = b;
+	}
+
+
 /* draw a character bitmap*/
-static void sdl_drawbitmap(int c, int x, int y)
+static void sdl_drawbitmap(byte_t c, byte_t a, int x, int y, int or)
 {
-	MWIMAGEBITS *imagebits = rom8x16_bits + CHAR_HEIGHT * (c & 0xFF);
+	MWIMAGEBITS *imagebits = rom8x16_bits + CHAR_HEIGHT * c;
     int minx = x;
     int maxx = x + CHAR_WIDTH - 1;
     int bitcount = 0;
 	unsigned short bitvalue = 0;
 	int height = CHAR_HEIGHT;
+	rgb_s fg, bg;
 
-	int fg_color = (c & ATTR_FGCOLOR) >> 8;
-	if (c & ATTR_BOLD) fg_color += 8;
-	int bg_color = (c & ATTR_BGCOLOR) >> 12;
-	unsigned char fg_r = EGA_COLORMAP[fg_color].r;
-	unsigned char fg_g = EGA_COLORMAP[fg_color].g;
-	unsigned char fg_b = EGA_COLORMAP[fg_color].b;
-	unsigned char bg_r = EGA_COLORMAP[bg_color].r;
-	unsigned char bg_g = EGA_COLORMAP[bg_color].g;
-	unsigned char bg_b = EGA_COLORMAP[bg_color].b;
+	if (vid_base() == 0xB0000)  // MDA
+		attr_rgb_mda (a, &fg, &bg);
+	else
+		attr_rgb_ega (a, &fg, &bg);
 
     while (height > 0) {
 		unsigned char *pixels;
@@ -96,14 +163,14 @@ static void sdl_drawbitmap(int c, int x, int y)
 			pixels = screen + y * PITCH + x * (BPP >> 3);
         }
         if (MWIMAGE_TESTBIT(bitvalue)) {
-			*pixels++ = fg_b;
-			*pixels++ = fg_g;
-			*pixels++ = fg_r;
+			*pixels++ = fg.b;
+			*pixels++ = fg.g;
+			*pixels++ = fg.r;
 			*pixels++ = 0xFF;
-		} else if (!(c & ATTR_OR)) {
-			*pixels++ = bg_b;
-			*pixels++ = bg_g;
-			*pixels++ = bg_r;
+		} else if (!or) {
+			*pixels++ = bg.b;
+			*pixels++ = bg.g;
+			*pixels++ = bg.r;
 			*pixels++ = 0xFF;
 		}
         bitvalue = MWIMAGE_SHIFTBIT(bitvalue);
@@ -121,15 +188,14 @@ static void sdl_drawbitmap(int c, int x, int y)
 // draw characters from adapter RAM
 static void draw_video_ram(int sx, int sy, int ex, int ey)
 {
-	int x, y;
-	word_t *vidram = (word_t *)&mem_stat[VID_BASE];
+	byte_t * vidram = &(mem_stat [vid_base()]);
 
-	for (y = sy; y < ey; y++)
+	for (int y = sy; y < ey; y++)
 	{
-		int j = y * COLS + sx;
-		for (x = sx; x < ex; x++)
+		int j = y * VID_COLS + sx;
+		for (int x = sx; x < ex; x++)
 		{
-			sdl_drawbitmap(vidram[j], x * CHAR_WIDTH, y * CHAR_HEIGHT);
+			sdl_drawbitmap (vidram [(j << 1) + 0], vidram [(j << 1) + 1], x * CHAR_WIDTH, y * CHAR_HEIGHT, 0);
 			j++;
 		}
 	}
@@ -140,7 +206,7 @@ static void cursoron(void)
 {
 	mem_stat[BDA_BASE+0x50] = curx;
 	mem_stat[BDA_BASE+0x51] = cury;
-	int pos = cury * COLS + curx;
+	int pos = cury * VID_COLS + curx;
 	crtc_curhi = pos >> 8;
 	crtc_curlo = pos & 0xff;
 }
@@ -149,22 +215,49 @@ static void cursoroff(void)
 {
 }
 
-
-// scroll adapter RAM
-static void scrollup(void)
+// clear line y from x1 up to and including x2 to attribute attr
+static void clear_line(int x1, byte_t x2, byte_t y, byte_t attr)
 {
-	int pitch = COLS * 2;
-	byte_t *vid = mem_stat + VID_BASE;
+	int x;
 
-	memcpy(vid, vid + pitch, (LINES-1) * pitch);
-	memset(vid + (LINES-1) * pitch, 0, pitch);
+	for (x = x1; x <= x2; x++) {
+		*(word_t *)&mem_stat[vid_base() + (y * VID_COLS + x) * 2] = ' ' | (attr << 8);
+		update_dirty_region(x, y);
+	}
+}
+
+// scroll adapter RAM up from line y1 up to and including line y2
+static void scrollup(int y1, int y2, byte_t attr)
+{
+	int pitch = VID_COLS * 2;
+	byte_t *vid = mem_stat + vid_base() + y1 * pitch;
+
+	memcpy(vid, vid + pitch, (VID_LINES - y1) * pitch);
+	clear_line (0, VID_COLS-1, y2, attr);
 	update_dirty_region (0, 0);
-	update_dirty_region (COLS-1, LINES-1);
+	update_dirty_region (VID_COLS-1, VID_LINES-1);
+}
+
+
+// scroll adapter RAM down from line y1 up to and including line y2
+static void scrolldn(int y1, int y2, byte_t attr)
+{
+	int pitch = VID_COLS * 2;
+	byte_t *vid = mem_stat + vid_base() + (VID_LINES-1) * pitch;
+	int y = y2;
+
+	while (--y >= y1) {
+		memcpy (vid, vid - pitch, pitch);
+		vid -= pitch;
+	}
+	clear_line (0, VID_COLS-1, y1, attr);
+	update_dirty_region (0, 0);
+	update_dirty_region (VID_COLS-1, VID_LINES-1);
 }
 
 
 /* output character at cursor location*/
-void sdl_textout(byte_t c, byte_t a)
+static void sdl_textout(byte_t c, byte_t a)
 {
 	cursoroff();
 
@@ -175,17 +268,17 @@ void sdl_textout(byte_t c, byte_t a)
 	case '\n':  goto scroll;
 	}
 
-	mem_stat [VID_BASE + (cury * COLS + curx) * 2 + 0] = c;
-	mem_stat [VID_BASE + (cury * COLS + curx) * 2 + 1] = a;
+	mem_stat [vid_base() + (cury * VID_COLS + curx) * 2 + 0] = c;
+	mem_stat [vid_base() + (cury * VID_COLS + curx) * 2 + 1] = a;
 
 	update_dirty_region (curx, cury);
 
-	if (++curx >= COLS) {
+	if (++curx >= VID_COLS) {
 		curx = 0;
 scroll:
-		if (++cury >= LINES) {
-			scrollup();
-			cury = LINES - 1;
+		if (++cury >= VID_LINES) {
+			scrollup(0, VID_LINES - 1, ATTR_DEFAULT);
+			cury = VID_LINES - 1;
 		}
 	}
 
@@ -222,20 +315,18 @@ int con_pos_get (byte_t *row, byte_t *col)
 	}
 
 
-int con_scrollup (byte_t n, byte_t at, byte_t r, byte_t c, byte_t r2, byte_t c2)
+int con_scroll (int dn, byte_t n, byte_t at, byte_t r, byte_t c, byte_t r2, byte_t c2)
 	{
-	byte_t x;
-
 	cursoroff();
 	if (n == 0 || n >= VID_LINES)
+		clear_line(c, c2, r, at);
+	else if (r != r2)
 		{
-			for (x = c; x <= c2; x++) {
-				*(word_t *)&mem_stat[VID_BASE + (r * VID_COLS + x) * 2] = ' ' | 0x0700;
-				update_dirty_region(x, r);
-			}
+		// FIXME count n, c, c2 ignored
+		if (dn)
+			scrolldn(r, r2, at);
+		else scrollup(r, r2, at);
 		}
-		else if (r != r2)
-			scrollup();
 	cursoron();
 	return 0;
 	}
@@ -372,8 +463,8 @@ int con_proc ()
 		{
 		// draw cursor
 		int pos = (crtc_curhi << 8) | crtc_curlo;
-		int y = pos / COLS;
-		int x = pos % COLS;
+		int y = pos / VID_COLS;
+		int x = pos % VID_COLS;
 		if (lastx != x || lasty != y || needscursor)
 			{
 			// remove last cursor
@@ -381,7 +472,7 @@ int con_proc ()
 			sdl_draw (lastx * CHAR_WIDTH, lasty * CHAR_HEIGHT, CHAR_WIDTH, CHAR_HEIGHT);
 
 			// draw current cursor
-			sdl_drawbitmap ('_'|ATTR_OR|ATTR_FGCOLOR, x * CHAR_WIDTH, y * CHAR_HEIGHT);
+			sdl_drawbitmap ('_', ATTR_DEFAULT, x * CHAR_WIDTH, y * CHAR_HEIGHT, 1);
 			sdl_draw (x * CHAR_WIDTH, y * CHAR_HEIGHT, CHAR_WIDTH, CHAR_HEIGHT);
 			lastx = x; lasty = y;
 			needscursor = 0;

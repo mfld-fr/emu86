@@ -21,7 +21,7 @@ int con_pos_get (byte_t *row, byte_t *col)
 	return 0;
 	}
 
-int con_scrollup (byte_t n, byte_t at, byte_t r, byte_t c, byte_t r2, byte_t c2)
+int con_scroll (int dn, byte_t n, byte_t at, byte_t r, byte_t c, byte_t r2, byte_t c2)
 	{
 	return 0;
 	}

@@ -100,7 +100,7 @@ static int _flag_filter = 0;  // filter traces
 static int _flag_prompt = 0;  // prompt for debug command
 static int _flag_exec   = 1;  // execute next instruction
 static int _flag_exit   = 0;  // exit main loop
-
+static int _flag_mon    = 0;  // monitor IPS
 
 static int debug_proc ()
 	{
@@ -121,7 +121,7 @@ static int debug_proc ()
 			char command [8];
 			if (!_flag_trace) putchar ('\n');
 			putchar ('>');
-			fflush(stdout);
+			fflush (stdout);
 			char * res = fgets (command, 8, stdin);
 			if (!res) {
 				err = -1;
@@ -300,7 +300,6 @@ static void cpu_proc (void)
 		}
 
 	// Trace instruction before debugging & execution
-	// TODO: trace filter as option
 
 	if (_flag_trace && ((_flag_filter == 0) || code_stat [addr_seg_off (op_code_seg, op_code_off)] == 0))
 		{
@@ -308,6 +307,7 @@ static void cpu_proc (void)
 		print_column (op_code_str, 3 * OPCODE_MAX + 1);
 		print_op (&_op_desc);
 		putchar ('\n');
+		fflush (stdout);
 
 		code_stat [addr_seg_off (op_code_seg, op_code_off)] = 1;
 		}
@@ -399,6 +399,7 @@ static void usage (char * argv0)
 	puts ("  -d <address>         data breakpoint address");
 	puts ("  -t                   trace mode");
 	puts ("  -T                   filtered trace mode");
+	puts ("  -m                   monitor IPS (iteration / second)");
 	puts ("  -i                   interactive mode");
 	puts ("  -p                   program mode");
 	puts ("  -v <level>           verbose info level");
@@ -419,7 +420,7 @@ int command_line (int argc, char * argv [])
 
 	while (1)
 		{
-		opt = getopt (argc, argv, "w:f:I:x:c:d:v:tTip");
+		opt = getopt (argc, argv, "w:f:I:x:c:d:v:tTmip");
 		if (opt < 0 || opt == '?') break;
 
 		switch (opt)
@@ -506,6 +507,10 @@ int command_line (int argc, char * argv [])
 				_flag_filter = 1;
 				break;
 
+			case 'm':  // monitor mode
+				_flag_mon = 1;
+				break;
+
 			case 'i':  // interactive mode
 				_flag_trace = 1;
 				_flag_prompt = 1;
@@ -572,16 +577,12 @@ int command_line (int argc, char * argv [])
 // Main loop
 //------------------------------------------------------------------------------
 
-//#define IPS
-
-#ifdef IPS
 static int _flag_alarm = 0;
 
 static void sigalarm (int s)
 	{
 	_flag_alarm = 1;
 	}
-#endif
 
 
 static void sigint (int s)
@@ -636,12 +637,14 @@ int main (int argc, char * argv [])
 
 		// Use alarm signal for performance metering
 
-#ifdef IPS
 		int loop_count = 0;
-		sa.sa_handler = sigalarm;
-		sigaction (SIGALRM, &sa, NULL);
-		alarm (1);
-#endif
+
+		if (_flag_mon)
+			{
+			sa.sa_handler = sigalarm;
+			sigaction (SIGALRM, &sa, NULL);
+			alarm (1);
+			}
 
 		while (!_flag_exit)
 			{
@@ -681,17 +684,18 @@ int main (int argc, char * argv [])
 				mainloop_count = 0;
 				}
 
-#ifdef IPS
-			loop_count++;
-
-			if (_flag_alarm)
+			if (_flag_mon)
 				{
-				printf ("info: ips=%i\n", loop_count);
-				loop_count = 0;
-				_flag_alarm = 0;
-				alarm (1);
+				loop_count++;
+
+				if (_flag_alarm)
+					{
+					printf ("info: ips=%i\n", loop_count);
+					loop_count = 0;
+					_flag_alarm = 0;
+					alarm (1);
+					}
 				}
-#endif
 
 			}  // flag_exit
 

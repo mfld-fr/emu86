@@ -982,6 +982,8 @@ static int class_1_C0h (byte_t code, op_desc_t * op_desc)
 					break;
 					}
 
+				// AAM (D4h) & AAD (D5h)
+
 				if (!(code & 0x02))
 					{
 					OP_ID = OP_ADJUST2 + op_desc->w2;

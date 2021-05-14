@@ -2,14 +2,14 @@
 // EMU86 - Generic interrupt
 //------------------------------------------------------------------------------
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <assert.h>
-
 #include "emu-mem-io.h"
 #include "emu-proc.h"
 #include "emu-serial.h"
 #include "emu-int.h"
+
+#include <stdlib.h>
+#include <stdio.h>
+
 
 //------------------------------------------------------------------------------
 // Interrupt controller
@@ -135,12 +135,15 @@ void int_end_prio ()
 			}
 		}
 
-	// TODO: manage spurious EOI
-	assert (serv >= 0);
-
-	_int_serv [serv] = 0;
-
-	int_proc ();
+	if (serv < 0)
+		{
+		puts ("\nwarning: spurious implicit EOI");
+		}
+	else
+		{
+		_int_serv [serv] = 0;
+		int_proc ();
+		}
 	}
 
 //------------------------------------------------------------------------------

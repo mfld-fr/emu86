@@ -2,13 +2,6 @@
 // EMU86 - ELKS ROM stub (BIOS)
 //------------------------------------------------------------------------------
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-
 #include "emu-mem-io.h"
 #include "emu-proc.h"
 #include "emu-con.h"
@@ -16,13 +9,18 @@
 #include "mem-io-elks.h"
 #include "rom-bios.h"
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+
 
 extern int info_level;
 
 
 // BIOS video services
-
-#define BDA_VIDEO_MODE 0x0449
 
 static int int_10h ()
 	{
@@ -31,6 +29,7 @@ static int int_10h ()
 	byte_t r;  // row
 	byte_t c;  // column
 	byte_t r2, c2, n, at;
+
 	byte_t ah = reg8_get (REG_AH);
 
 	switch (ah)
@@ -56,30 +55,30 @@ static int int_10h ()
 		case 0x05:		// FIXME page required for multiple consoles
 			break;
 
-		// Scroll up
+		// Scroll up/down
 
-		case 0x06:
+		case 0x06:		// up
+		case 0x07:		// down
 			n = reg8_get (REG_AL); 	// # lines
 			at = reg8_get (REG_BH); // attribute
 			r = reg8_get (REG_CH);  // upper L/R
 			c = reg8_get (REG_CL);
 			r2 = reg8_get (REG_DH);	// lower L/R
 			c2 = reg8_get (REG_DL);
-			con_scrollup (n, at, r, c, r2, c2);
+			con_scroll (ah == 0x07, n, at, r, c, r2, c2);
 			break;
 
 		// Write character and attribute at current cursor position
 
 		case 0x09:
-			at = reg8_get (REG_BL); // attribute
-			con_put_char (reg8_get (REG_AL), at);  // CX count ignored
+			con_put_char (reg8_get (REG_AL), reg8_get (REG_BL));  // CX count ignored
 			break;
 
 		// Write as teletype to current page
-		// Page ignored in video mode 7
+		// Page ignored
 
 		case 0x0E:
-			con_put_char (reg8_get (REG_AL), ATTR_NORMAL);
+			con_put_char (reg8_get (REG_AL), ATTR_DEFAULT);
 			break;
 
 		// Get video mode
@@ -336,7 +335,7 @@ static int int_13h ()
 			reg8_set (REG_CL, dp->sectors | (((c >> 8) & 0x03) << 6));
 			reg8_set (REG_DH, dp->heads - 1);
 			seg_set (SEG_ES, 0xFF00);   // fake DDPT, same as INT 1Eh
-			reg16_set (REG_DI, 0x0000);
+			reg16_set (REG_DI, 0x0000);	// FIXME wrong address
 			err = 0;
 			break;
 
@@ -485,21 +484,6 @@ void rom_init (void)
 
 	rom_init_0 ();
 
-	// ELKS saves and calls initial INT 08h (timer)
-	// So implement a stub for INT 08h that just EOI
-	// Starting @ F000:1000h
-
-	mem_write_byte (0xF1000, 0xB0, 1);  // MOV AL,20h
-	mem_write_byte (0xF1001, 0x20, 1);
-	mem_write_byte (0xF1002, 0xE6, 1);  // OUT 20h,AL
-	mem_write_byte (0xF1003, 0x20, 1);
-	mem_write_byte (0xF1004, 0xCF, 1);  // IRET
-
-	// Point vector 08h to that stub
-
-	mem_write_word (0x08*4+0, 0x1000, 1);
-	mem_write_word (0x08*4+2, 0xF000, 1);
-
 	// Point vector 1Eh to a dummy disk drive parameter table (DDPT)
 	// Required by the disk boot sector
 	// Starting @ F000:2000h
@@ -554,12 +538,12 @@ void rom_init (void)
 	// BIOS Data Area (BDA) setup for EGA/MDA adaptors
 
 	memset (mem_stat+BDA_BASE, 0x00, 256);
-	*(byte_t *) (mem_stat+BDA_BASE+0x49) =  3; 				// video mode (3= EGA 7=MDA)
+	mem_stat [BDA_VIDEO_MODE] = 3;  // video mode (3=EGA 7=MDA)
 	*(byte_t *) (mem_stat+BDA_BASE+0x4a) =  VID_COLS;		// console width
 	*(word_t *) (mem_stat+BDA_BASE+0x4c) =  VID_PAGE_SIZE;	// page size
 	*(word_t *) (mem_stat+BDA_BASE+0x63) =  CRTC_CTRL_PORT;	// 6845 CRTC
 
 	*(byte_t *) (mem_stat+BDA_BASE+0x10) =  0x81;			// 1 floppy
 
-	memset (mem_stat+VID_BASE, 0x00, VID_PAGE_SIZE);		// clear text RAM
+	memset (mem_stat+vid_base(), 0x00, VID_PAGE_SIZE);		// clear text RAM
 	}
