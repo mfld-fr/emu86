@@ -72,7 +72,14 @@ void reg8_set (byte_t r8, byte_t b)
 word_t reg16_get (byte_t r16)
 	{
 	assert (r16 < REG16_MAX);
-	return _proc_stat.regs [r16];
+
+	// Upper 4 bits of FLAGS are always 1 on IA16
+	// This helps CPU model identification
+
+	word_t v = _proc_stat.regs [r16];
+	if (r16 == REG_FL) v |= 0xF000;
+
+	return v;
 	}
 
 void reg16_set (byte_t r16, word_t w)
