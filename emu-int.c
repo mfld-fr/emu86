@@ -135,12 +135,15 @@ void int_end_prio ()
 			}
 		}
 
-	// TODO: manage spurious EOI
-	assert (serv >= 0);
-
-	_int_serv [serv] = 0;
-
-	int_proc ();
+	if (serv < 0)
+		{
+		puts ("\nwarning: spurious implicit EOI");
+		}
+	else
+		{
+		_int_serv [serv] = 0;
+		int_proc ();
+		}
 	}
 
 //------------------------------------------------------------------------------

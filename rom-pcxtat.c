@@ -740,21 +740,6 @@ void rom_init (void)
 
 	rom_init_0 ();
 
-	// ELKS saves and calls initial INT 08h (timer)
-	// So implement a stub for INT 08h that just EOI
-	// Starting @ F000:1000h
-
-	mem_write_byte (0xF1000, 0xB0, 1);  // MOV AL,20h
-	mem_write_byte (0xF1001, 0x20, 1);
-	mem_write_byte (0xF1002, 0xE6, 1);  // OUT 20h,AL
-	mem_write_byte (0xF1003, 0x20, 1);
-	mem_write_byte (0xF1004, 0xCF, 1);  // IRET
-
-	// Point vector 08h to that stub
-
-	mem_write_word (0x08*4+0, 0x1000, 1);
-	mem_write_word (0x08*4+2, 0xF000, 1);
-
 	// Point vector 1Eh to a dummy disk drive parameter table (DDPT)
 	// Required by the disk boot sector
 	// Starting @ F000:2000h
