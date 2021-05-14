@@ -58,9 +58,9 @@ int mem_write_byte_0 (addr_t a, byte_t b, byte_t init)
 
 	if (a >= ROM_BASE && !init)  // Protect ROM
 		{
-		printf ("\nfatal: writing byte into ROM @ %lXh\n", a);
+		printf ("\nwarning: writing byte into ROM @ %lXh\n", a);
 		// FIXME: hack to stop until error management
-		exit (0);
+		// exit (0);
 		err = -1;
 		}
 	else
@@ -82,9 +82,9 @@ int mem_write_word_0 (addr_t a, word_t w, byte_t init)
 
 	if (a >= (ROM_BASE - 1) && !init)  // Protect ROM
 		{
-		printf ("\nfatal: writing word into ROM @ %lxh\n", a);
+		printf ("\nwarning: writing word into ROM @ %lxh\n", a);
 		// FIXME: hack to stop until error management
-		exit (0);
+		// exit (0);
 		err = -1;
 		}
 	else

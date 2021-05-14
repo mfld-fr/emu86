@@ -16,6 +16,8 @@
 #include "emu-mem-io.h"
 #include "con-sdl.h"
 #include "mem-io-elks.h"
+#include "rom-bios.h"
+
 
 /* configurable parameters*/
 #define CHAR_WIDTH	8
@@ -29,11 +31,10 @@ extern MWIMAGEBITS rom8x16_bits[];
 #define PITCH		(WIDTH * (BPP >> 3))
 
 /* display attributes*/
-#define ATTR_OR     0x10000		// OR w/pixels (cursor)
-#define ATTR_BLINK   0x8000
-#define ATTR_BGCOLOR 0x7000
-#define ATTR_BOLD    0x0800
-#define ATTR_FGCOLOR 0x0700
+#define ATTR_BLINK   0x80
+#define ATTR_BGCOLOR 0x70
+#define ATTR_BRIGHT  0x08
+#define ATTR_FGCOLOR 0x07
 
 static SDL_Window *sdlWindow;
 static SDL_Renderer *sdlRenderer;
@@ -42,11 +43,12 @@ static float sdlZoom = 1.0;
 static unsigned char *screen;
 static int curx, cury;
 
-#define RGBDEF(r,g,b)	{ r,g,b,255 }
-struct rgba { unsigned char r, g, b, a; };
+#define RGBDEF(r,g,b)	{ r,g,b }
+struct rgb { unsigned char r, g, b; };
+typedef struct rgb rgb_s;
 
 // 16 color EGA palette for attribute mapping
-static struct rgba EGA_COLORMAP[16] = {
+static rgb_s EGA_COLORMAP[16] = {
 	RGBDEF( 0  , 0  , 0   ),	/* 0 black*/
 	RGBDEF( 0  , 0  , 192 ),	/* blue*/
 	RGBDEF( 0  , 192, 0   ),	/* 2 green*/
@@ -65,44 +67,93 @@ static struct rgba EGA_COLORMAP[16] = {
 	RGBDEF( 255, 255, 255 ),	/* white*/
 };
 
-// EGA colormap indexes for MDA
-#define MDA_BLACK	0
-#define MDA_GREEN	2
-#define MDA_LTGREEN	10
+// EGA attribute to RGB
+
+static void attr_rgb_ega (byte_t attr, rgb_s * fg, rgb_s * bg)
+	{
+	int f;  // foreground color index
+	int b;  // background color index
+
+	f = attr & ATTR_FGCOLOR;
+	if (attr & ATTR_BRIGHT) f += 8;
+	b = (attr & ATTR_BGCOLOR) >> 4;
+
+	fg->r = EGA_COLORMAP [f].r;
+	fg->g = EGA_COLORMAP [f].g;
+	fg->b = EGA_COLORMAP [f].b;
+
+	bg->r = EGA_COLORMAP [b].r;
+	bg->g = EGA_COLORMAP [b].g;
+	bg->b = EGA_COLORMAP [b].b;
+	}
+
+
+// MDA attribute to RGB
+
+#define MDA_BRIGHT 0xFF
+#define MDA_NORMAL 0x9F
+#define MDA_DARK   0x3F
+
+static void attr_rgb_mda (byte_t attr, rgb_s * fg, rgb_s * bg)
+	{
+	int f;  // foreground intensity
+	int b;  // background intensity
+
+	// Attributes 00h, 08h, 80h and 88h display as black space
+	// So when x000x000b
+
+	if (!(attr & 0x77))
+		{
+		f = b = 0;
+		}
+
+	// Attributes 70h, 78h, F0h and F8h are special cases
+	// So when x111x000b
+
+	else if ((attr & 0x77) == 0x70)
+		{
+		// Attribute 70h displays as black on green
+		// Attribute 78h displays as dark green on green
+		// Attribute F0h displays as a blinking version of 70h (if blinking is enabled)
+		// or as black on bright green otherwise
+		// Attribute F8h displays as a blinking version of 78h (if blinking is enabled)
+		// or as dark green on bright green otherwise
+
+		f = (attr & 0x08) ? MDA_DARK : 0;
+		b = (attr & 0x80) ? MDA_BRIGHT : MDA_NORMAL;
+		}
+
+	// Normal case
+	// Bits 0-2: 1 = underline (ignored), other values = no underline
+	// Bit 3: high intensity
+	// Bit 7: blink (ignored)
+
+	else
+		{
+		f = (attr & ATTR_BRIGHT) ? MDA_BRIGHT : MDA_NORMAL;
+		b = 0;
+		}
+
+	fg->r = fg->g = fg->b = f;
+	bg->r = bg->g = bg->b = b;
+	}
 
 
 /* draw a character bitmap*/
-static void sdl_drawbitmap(int c, int x, int y)
+static void sdl_drawbitmap(byte_t c, byte_t a, int x, int y, int or)
 {
-	MWIMAGEBITS *imagebits = rom8x16_bits + CHAR_HEIGHT * (c & 0xFF);
+	MWIMAGEBITS *imagebits = rom8x16_bits + CHAR_HEIGHT * c;
     int minx = x;
     int maxx = x + CHAR_WIDTH - 1;
     int bitcount = 0;
 	unsigned short bitvalue = 0;
 	int height = CHAR_HEIGHT;
-	int fg_color, bg_color;
+	rgb_s fg, bg;
 
-	if (vid_base() == 0xB0000) {	// MDA
-		if ((c & 0x7700) == 0)
-			fg_color = bg_color = MDA_BLACK;
-		else if ((c & 0x7700) == 0x7000) {
-			fg_color = MDA_BLACK;
-			bg_color = MDA_GREEN;
-		} else {
-			fg_color = (c & ATTR_BOLD)? MDA_LTGREEN: MDA_GREEN;
-			bg_color = MDA_BLACK;
-		}
-	} else {						// EGA
-		fg_color = (c & ATTR_FGCOLOR) >> 8;
-		if (c & ATTR_BOLD) fg_color += 8;
-		bg_color = (c & ATTR_BGCOLOR) >> 12;
-	}
-	unsigned char fg_r = EGA_COLORMAP[fg_color].r;
-	unsigned char fg_g = EGA_COLORMAP[fg_color].g;
-	unsigned char fg_b = EGA_COLORMAP[fg_color].b;
-	unsigned char bg_r = EGA_COLORMAP[bg_color].r;
-	unsigned char bg_g = EGA_COLORMAP[bg_color].g;
-	unsigned char bg_b = EGA_COLORMAP[bg_color].b;
+	if (vid_base() == 0xB0000)  // MDA
+		attr_rgb_mda (a, &fg, &bg);
+	else
+		attr_rgb_ega (a, &fg, &bg);
 
     while (height > 0) {
 		unsigned char *pixels;
@@ -112,14 +163,14 @@ static void sdl_drawbitmap(int c, int x, int y)
 			pixels = screen + y * PITCH + x * (BPP >> 3);
         }
         if (MWIMAGE_TESTBIT(bitvalue)) {
-			*pixels++ = fg_b;
-			*pixels++ = fg_g;
-			*pixels++ = fg_r;
+			*pixels++ = fg.b;
+			*pixels++ = fg.g;
+			*pixels++ = fg.r;
 			*pixels++ = 0xFF;
-		} else if (!(c & ATTR_OR)) {
-			*pixels++ = bg_b;
-			*pixels++ = bg_g;
-			*pixels++ = bg_r;
+		} else if (!or) {
+			*pixels++ = bg.b;
+			*pixels++ = bg.g;
+			*pixels++ = bg.r;
 			*pixels++ = 0xFF;
 		}
         bitvalue = MWIMAGE_SHIFTBIT(bitvalue);
@@ -137,15 +188,14 @@ static void sdl_drawbitmap(int c, int x, int y)
 // draw characters from adapter RAM
 static void draw_video_ram(int sx, int sy, int ex, int ey)
 {
-	int x, y;
-	word_t *vidram = (word_t *)&mem_stat[vid_base()];
+	byte_t * vidram = &(mem_stat [vid_base()]);
 
-	for (y = sy; y < ey; y++)
+	for (int y = sy; y < ey; y++)
 	{
 		int j = y * VID_COLS + sx;
-		for (x = sx; x < ex; x++)
+		for (int x = sx; x < ex; x++)
 		{
-			sdl_drawbitmap(vidram[j], x * CHAR_WIDTH, y * CHAR_HEIGHT);
+			sdl_drawbitmap (vidram [(j << 1) + 0], vidram [(j << 1) + 1], x * CHAR_WIDTH, y * CHAR_HEIGHT, 0);
 			j++;
 		}
 	}
@@ -207,7 +257,7 @@ static void scrolldn(int y1, int y2, byte_t attr)
 
 
 /* output character at cursor location*/
-void sdl_textout(byte_t c, byte_t a)
+static void sdl_textout(byte_t c, byte_t a)
 {
 	cursoroff();
 
@@ -227,7 +277,7 @@ void sdl_textout(byte_t c, byte_t a)
 		curx = 0;
 scroll:
 		if (++cury >= VID_LINES) {
-			scrollup(0, VID_LINES - 1, ATTR_NORMAL);
+			scrollup(0, VID_LINES - 1, ATTR_DEFAULT);
 			cury = VID_LINES - 1;
 		}
 	}
@@ -422,7 +472,7 @@ int con_proc ()
 			sdl_draw (lastx * CHAR_WIDTH, lasty * CHAR_HEIGHT, CHAR_WIDTH, CHAR_HEIGHT);
 
 			// draw current cursor
-			sdl_drawbitmap ('_'|ATTR_OR|ATTR_FGCOLOR, x * CHAR_WIDTH, y * CHAR_HEIGHT);
+			sdl_drawbitmap ('_', ATTR_DEFAULT, x * CHAR_WIDTH, y * CHAR_HEIGHT, 1);
 			sdl_draw (x * CHAR_WIDTH, y * CHAR_HEIGHT, CHAR_WIDTH, CHAR_HEIGHT);
 			lastx = x; lasty = y;
 			needscursor = 0;
