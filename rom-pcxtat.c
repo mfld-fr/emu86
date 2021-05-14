@@ -799,5 +799,7 @@ void rom_init (void)
 	*(word_t *) (mem_stat+BDA_BASE+0x4c) =  VID_PAGE_SIZE;	// page size
 	*(word_t *) (mem_stat+BDA_BASE+0x63) =  CRTC_CTRL_PORT;	// 6845 CRTC
 
+	*(byte_t *) (mem_stat+BDA_BASE+0x10) =  0x81;			// 1 floppy
+
 	memset (mem_stat+vid_base(), 0x00, VID_PAGE_SIZE);		// clear text RAM
 	}
