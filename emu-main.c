@@ -121,7 +121,7 @@ static int debug_proc ()
 			char command [8];
 			if (!_flag_trace) putchar ('\n');
 			putchar ('>');
-			fflush(stdout);
+			fflush (stdout);
 			char * res = fgets (command, 8, stdin);
 			if (!res) {
 				err = -1;
@@ -300,7 +300,6 @@ static void cpu_proc (void)
 		}
 
 	// Trace instruction before debugging & execution
-	// TODO: trace filter as option
 
 	if (_flag_trace && ((_flag_filter == 0) || code_stat [addr_seg_off (op_code_seg, op_code_off)] == 0))
 		{
@@ -308,6 +307,7 @@ static void cpu_proc (void)
 		print_column (op_code_str, 3 * OPCODE_MAX + 1);
 		print_op (&_op_desc);
 		putchar ('\n');
+		fflush (stdout);
 
 		code_stat [addr_seg_off (op_code_seg, op_code_off)] = 1;
 		}

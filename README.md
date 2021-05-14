@@ -2,7 +2,7 @@
 
 ## PURPOSE
 
-EMU86 is yet another 8086/8088/80186/80188 emulator.
+EMU86 is yet another 8086 / 8088 / 80186 / 80188 emulator.
 
 That old 16 bits processor architecture ('IA16') is still used today in some devices
 (SBC, MCU, SoC, FPGA, etc.) that reuse the huge hardware and code base from
@@ -15,13 +15,14 @@ burning it into the EEPROM / Flash on the device.
 The goal is **NOT** to reinvent the wheel for PC / end-user emulation, as others
 projects like QEMU, DOSEMU, Bochs, etc., already do that job very well.
 
-Therefore some features like the 80286 protected mode and the 32/64 bits
+Therefore some features like the 80286 protected mode and the 32 / 64 bits
 modes are out of this project scope.
 
 The emulator has a modular design with:
+- memory state
+- processor state
 - instruction decoding
 - instruction printing
-- processor context
 - instruction execution
 - memory & I/O access handler for peripheral stubbing
 - interrupt handler for firmware (BIOS) stubbing
@@ -54,7 +55,7 @@ also known as 'Linux 8086', in a minimal PC/XT/AT configuration.
 It is also able to emulate the Advantech SNMP-1000, an SBC based on the R8810 MCU,
 that is a 80188 clone but with with its specific interrupt controller, timer and serial port.
 
-And last but not least, it is now able to boot MSDOS 6.22 & FreeDOS,
+And last but not least, it is now able to boot MSDOS & FreeDOS,
 but this is rather a test case for EMU86 than an intended use.
 
 Any addition to support more embbeded systems based on IA16 is welcome.
@@ -69,7 +70,9 @@ First configure EMU86 by editing `config.mk`:
 * SERIAL: serial backend
 * STYLE: disassembly style in debugger
 
-Two default configurations are provided for convenience:
+The default configuration is for a minimal PC / XT / AT.
+
+Two other default configurations are provided for convenience:
 * `config-elks.mk`
 * `config-advtech.mk`
 

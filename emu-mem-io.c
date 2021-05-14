@@ -66,10 +66,10 @@ int mem_write_byte_0 (addr_t a, byte_t b, byte_t init)
 		byte_t * p = (byte_t *) mem_get_addr (a);
 		*p = b;
 
-	  // No more traced instruction here
+		// No more traced instruction here
 
-	  code_stat [a] = 0;
-    }
+		code_stat [a] = 0;
+		}
 
 	return err;
 	}
@@ -88,11 +88,11 @@ int mem_write_word_0 (addr_t a, word_t w, byte_t init)
 		word_t * p = (word_t *) mem_get_addr (a);
 		*p = w;
 
-	  // No more traced instruction here
+		// No more traced instruction here
 
-	  code_stat [a] = 0;
-	  code_stat [a + 1] = 0;
-    }
+		code_stat [a] = 0;
+		code_stat [a + 1] = 0;
+		}
 
 	return err;
 	}

@@ -2,14 +2,14 @@
 // EMU86 - Generic interrupt
 //------------------------------------------------------------------------------
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <assert.h>
-
 #include "emu-mem-io.h"
 #include "emu-proc.h"
 #include "emu-serial.h"
 #include "emu-int.h"
+
+#include <stdlib.h>
+#include <stdio.h>
+
 
 //------------------------------------------------------------------------------
 // Interrupt controller

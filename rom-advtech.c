@@ -90,7 +90,7 @@ static int int_D0h ()
 		// 11b: ROM TEST
 
 		case 0x01:
-			reg16_set (REG_AX, 3);
+			reg16_set (REG_AX, 1);
 			break;
 
 		// No RTC emulated in EMU86
