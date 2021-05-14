@@ -14,6 +14,8 @@ struct op_id_name_s
 typedef struct op_id_name_s op_id_name_t;
 
 static op_id_name_t id_name_tab [] = {
+	{ OP_AAD,    "AAD"    },
+	{ OP_AAM,    "AAM"    },
 	{ OP_ADC,    "ADC"    },
 	{ OP_ADD,    "ADD"    },
 	{ OP_AND,    "AND"    },
