@@ -647,7 +647,7 @@ static int op_inc_dec (op_desc_t * op_desc)
 
 	// TODO: update flags
 
-	flag_set (FLAG_ZF, r ? 0 : 1);
+	flag_set (FLAG_ZF, r & (temp.w ? 0xFFFF : 0x00FF) ? 0 : 1);
 
 	word_t s = temp.w ? r & 0x8000 : r & 0x80;
 	flag_set (FLAG_SF, s ? 1 : 0);
