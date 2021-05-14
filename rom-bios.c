@@ -3,9 +3,13 @@
 #include "emu-mem-io.h"
 #include "rom-bios.h"
 
+#include <string.h>
+
 
 void rom_init_0 (void)
 	{
+	memset (mem_stat + BDA_BASE, 0, 256);
+
 	// ELKS saves and calls initial INT 08h (timer)
 	// So implement a stub for INT 08h that does EOI
 	// Starting @ F000:1000h

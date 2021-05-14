@@ -17,10 +17,6 @@
 //#define CRTC_CTRL_PORT 0x03B4		// mono (MDA)
 #define CRTC_DATA_PORT	(CRTC_CTRL_PORT+1)
 
-// BIOS Data Area
-
-#define BDA_BASE		0x00400
-
 // 8253/8254 Timer
 #define TIMER_DATA_PORT	0x42
 #define TIMER_CTRL_PORT	(TIMER_DATA_PORT+1)

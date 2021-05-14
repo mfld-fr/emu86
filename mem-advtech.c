@@ -6,6 +6,18 @@
 
 // Memory access
 
+byte_t mem_read_byte (addr_t a)
+	{
+	return mem_read_byte_0 (a);
+	}
+
+
+word_t mem_read_word (addr_t a)
+	{
+	return mem_read_word_0 (a);
+	}
+
+
 void mem_write_byte (addr_t a, byte_t b, byte_t init)
 	{
 	// Small glitch in Advantech original BIOS

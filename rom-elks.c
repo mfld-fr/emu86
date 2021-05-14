@@ -537,7 +537,6 @@ void rom_init (void)
 
 	// BIOS Data Area (BDA) setup for EGA/MDA adaptors
 
-	memset (mem_stat+BDA_BASE, 0x00, 256);
 	mem_stat [BDA_VIDEO_MODE] = 3;  // video mode (3=EGA 7=MDA)
 	*(byte_t *) (mem_stat+BDA_BASE+0x4a) =  VID_COLS;		// console width
 	*(word_t *) (mem_stat+BDA_BASE+0x4c) =  VID_PAGE_SIZE;	// page size

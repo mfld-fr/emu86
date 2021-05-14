@@ -26,14 +26,17 @@ extern byte_t code_stat [MEM_MAX];
 
 void * mem_get_addr (addr_t a);
 
-byte_t mem_read_byte (addr_t a);
-word_t mem_read_word (addr_t a);
+byte_t mem_read_byte_0 (addr_t a);
+word_t mem_read_word_0 (addr_t a);
 
 int mem_write_byte_0 (addr_t a, byte_t b, byte_t init);
 int mem_write_word_0 (addr_t a, word_t w, byte_t init);
 
 
 // Target operations
+
+byte_t mem_read_byte (addr_t a);
+word_t mem_read_word (addr_t a);
 
 void mem_write_byte (addr_t a, byte_t b, byte_t init);
 void mem_write_word (addr_t a, word_t w, byte_t init);

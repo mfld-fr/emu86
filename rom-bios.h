@@ -5,16 +5,18 @@
 // Starts @ 40:0h
 // Usually 256 bytes long
 
-#define BDA_VIDEO_MODE 0x0449
+#define BDA_BASE        0x0400
 
-#define BDA_TIMER_LO   0x046C
-#define BDA_TIMER_HI   0x046E
-#define BDA_TIMER_DAY  0x0470
+#define BDA_VIDEO_MODE  0x0449
+
+#define BDA_TIMER_LO    0x046C
+#define BDA_TIMER_HI    0x046E
+#define BDA_TIMER_DAY   0x0470
 
 
 // Default character attribute
 // Common MDA / EGA value
-// TODO: move to con-video.h
+// TODO: move to video.h
 
 #define ATTR_DEFAULT 0x07
 

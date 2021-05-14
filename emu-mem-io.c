@@ -39,13 +39,13 @@ void * mem_get_addr (addr_t a)
 	}
 
 
-byte_t mem_read_byte (addr_t a)
+byte_t mem_read_byte_0 (addr_t a)
 	{
 	byte_t * p = (byte_t *) mem_get_addr (a);
 	return *p;
 	}
 
-word_t mem_read_word (addr_t a)
+word_t mem_read_word_0 (addr_t a)
 	{
 	word_t * p = (word_t *) mem_get_addr (a);
 	return *p;
