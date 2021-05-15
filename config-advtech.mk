@@ -2,7 +2,7 @@
 # Defaults for Advantech target
 
 TARGET=advtech
-PLATFORM=terminal
+HOST=native
 CONSOLE=none
 SERIAL=pty
 STYLE=intel

@@ -60,7 +60,7 @@ The emulator is now able to run [ELKS](https://github.com/jbruchon/elks),
 also known as 'Linux 8086', in a minimal PC/XT/AT configuration.
 
 It is also able to emulate the Advantech SNMP-1000, an SBC based on the R8810 MCU,
-that is a 80188 clone but with with its specific interrupt controller, timer and serial port.
+that is a 80188 clone but merges some XL & EB features (both DMA & serial).
 
 And last but not least, it is able to boot MS-DOS 6.22, but this is rather
 a test case for EMU86 than an intended use.
@@ -72,7 +72,7 @@ Any addition to support more embbeded systems based on IA16 is welcome.
 
 First configure EMU86 by editing `config.mk`:
 * TARGET: emulated target / system
-* PLATFORM: emulation on host or in web browser (experimental)
+* HOST: emulation on native host or in web browser (experimental)
 * CONSOLE: console backend for PC target
 * SERIAL: serial backend
 * STYLE: disassembly style in debugger
@@ -87,7 +87,7 @@ Then run `make clean` and `make` as usual.
 
 To build and run browser version (requires ELKS):
 * Goto https://emscripten.org/docs/getting_started/downloads.html to download and install Emscripten SDK.
-* Change PLATFORM=emscripten in config.mk
+* Change HOST=emscripten in config.mk
 * `source ~/emsdk/emsdk_env.sh`
 * `make`
 * `emrun --serve_after_close emu86.html`

@@ -3,7 +3,7 @@
  *	Supports ELKS Headless Console (streaming data)
  *	Supports ELKS BIOS Console (BIOS cursor, scroll etc)
  *	Supports ELKS Direct Console (emulated video RAM)
- *	Also used by Emscripten platform for emulator console output in browser
+ *	Also used by Emscripten for emulator console output in browser
  *
  * Dec 2020 Greg Haerr <greg@censoft.com>
  */

@@ -9,7 +9,7 @@ PREFIX = /usr/local
 
 EMU86_PROG = emu86
 
-ifeq ($(PLATFORM), emscripten)
+ifeq ($(HOST), emscripten)
 CC = emcc -s ASYNCIFY -O3 --emrun -s USE_SDL=2 -DSDL=1
 #CC = emcc -s ASYNCIFY -O2 --emrun -s USE_SDL=2 -DSDL=1 --closure 1 -flto
 CFLAGS =
@@ -52,7 +52,7 @@ EMU86_OBJS += op-print-$(STYLE).o
 
 # Force console to SDL for emscripten
 
-ifeq ($(PLATFORM), emscripten)
+ifeq ($(HOST), emscripten)
 	CONSOLE=sdl
 endif
 

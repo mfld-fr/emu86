@@ -9,12 +9,12 @@ TARGET=pcxtat
 #TARGET=elks
 #TARGET=advtech
 
-# Platform selection
-# terminal:   standard 
+# Host selection
+# native:     run on native host
 # emscripten: run in web browser
 
-PLATFORM=terminal
-#PLATFORM=emscripten
+HOST=native
+#HOST=emscripten
 
 # Console backend
 # none:  no console backend
