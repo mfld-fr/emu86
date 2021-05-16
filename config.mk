@@ -44,5 +44,5 @@ SERIAL=none
 # att:   AT&T syntax (GNU default)
 # intel: Intel syntax
 
-#STYLE=att
-STYLE=intel
+STYLE=att
+#STYLE=intel
