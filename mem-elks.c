@@ -60,7 +60,7 @@ word_t mem_read_word (addr_t a)
 		{
 		printf ("\ninfo: reading word %hXh from %lXh\n", w, a);
 		}
-	 */
+	*/
 
 	return w;
 	}
@@ -82,7 +82,7 @@ void mem_write_byte (addr_t a, byte_t b, byte_t init)
 	/*
 	else if (a >= 0x400 && a < 0x500)
 		{
-		printf ("\ninfo: writing byte %hhXh into BDA @ %lXh\n", b, a);
+		printf ("\ninfo: writing byte %hhXh into %lXh\n", b, a);
 		mem_write_byte_0 (a, b, init);
 		}
 	*/
@@ -109,10 +109,10 @@ void mem_write_word (addr_t a, word_t w, byte_t init)
 		}
 
 	/*
-	else if (a >= 0x400 && a < 0x4FF)
+	else if (a >= 0x400 && a != 0x46C && a < 0x4FF)
 		{
-		printf ("\ninfo: writing word %hXh into BDA @ %lXh\n", w, a);
-		mem_write_byte_0 (a, w, init);
+		printf ("\ninfo: writing word %hXh into %lXh\n", w, a);
+		mem_write_word_0 (a, w, init);
 		}
 	*/
 

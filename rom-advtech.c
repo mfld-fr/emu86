@@ -132,10 +132,55 @@ int_num_hand_t _int_tab [] = {
 	};
 
 
+// BIOS boot sequence starts @ F000:0h
+
+static addr_t bios_boot = 0xF0000;
+
+// BIOS extension check
+
+static void bios_check (addr_t b, int size)
+	{
+	byte_t sum = 0;
+
+	for (addr_t a = b; a < (b + size); a++)
+		sum += mem_read_byte (a);
+
+	if (sum == 0)
+		{
+		// Append a far call to any detected extension to the BIOS boot sequence
+
+		mem_write_byte (bios_boot, 0x9A, 1);  // CALLF
+		mem_write_word (bios_boot + 1, 0x0003, 1);
+		mem_write_word (bios_boot + 3, b >> 4, 1);
+		bios_boot += 5;
+		}
+	}
+
 // ROM stub (BIOS) initialization
 
 void rom_init (void)
 	{
+	// Any extension @ E000:0h must be 64K
+
+	if (mem_read_word (0xE0000) == 0xAA55)
+		{
+		bios_check (0xE0000, 0x10000);
+		}
+
+	if (bios_boot > 0xF0000)
+		{
+		// End BIOS boot initialization sequence with INT 19h for OS boot
+
+		mem_write_byte (bios_boot++, 0xCD, 1);  // INT 19h
+		mem_write_byte (bios_boot++, 0x19, 1);
+
+		// CPU boot starts @ FFFF:0h
+		// Jump to BIOS boot
+
+		mem_write_byte (0xFFFF0, 0xEA,   1);  // JMPF
+		mem_write_word (0xFFFF1, 0x0000, 1);
+		mem_write_word (0xFFFF3, 0xF000, 1);
+		}
 	}
 
 int rom_image_load (char * path)
