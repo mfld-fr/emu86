@@ -7,7 +7,7 @@
 #include "emu-serial.h"
 #include "emu-int.h"
 
-#include "int-advtech.h"
+#include "int-r8810.h"
 
 #include <stdlib.h>
 #include <stdio.h>

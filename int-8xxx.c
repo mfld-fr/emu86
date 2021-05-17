@@ -3,7 +3,9 @@
 //------------------------------------------------------------------------------
 
 #include "emu-int.h"
-#include "int-elks.h"
+
+#include "int-8xxx.h"
+
 
 int _int_line_max = INT_LINE_MAX;
 int _int_prio_max = INT_PRIO_MAX;

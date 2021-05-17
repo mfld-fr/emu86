@@ -1,10 +1,10 @@
 //-------------------------------------------------------------------------------
-// EMU86 - Advantech I/O
+// EMU86 - Advantech board I/O mapping
 //-------------------------------------------------------------------------------
 
-#include "int-advtech.h"
-#include "timer-advtech.h"
-#include "serial-advtech.h"
+#include "int-r8810.h"
+#include "serial-r8810.h"
+#include "timer-r8810.h"
 
 //-------------------------------------------------------------------------------
 

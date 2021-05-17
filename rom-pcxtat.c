@@ -6,7 +6,8 @@
 #include "emu-proc.h"
 #include "emu-con.h"
 #include "emu-int.h"
-#include "mem-io-elks.h"
+
+#include "mem-io-pcxtat.h"
 #include "rom-bios.h"
 
 #include <stdlib.h>

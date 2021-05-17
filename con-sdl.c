@@ -15,7 +15,8 @@
 #include "emu-con.h"
 #include "emu-mem-io.h"
 #include "con-sdl.h"
-#include "mem-io-elks.h"
+
+#include "mem-io-pcxtat.h"
 #include "rom-bios.h"
 
 

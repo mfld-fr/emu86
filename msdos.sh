@@ -1,2 +1,2 @@
 #!/bin/bash
-./emu86 -I msdos.img
+./emu86 -I msdos.img ${1+"$@"}

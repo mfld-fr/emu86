@@ -1,5 +1,5 @@
 //-------------------------------------------------------------------------------
-// EMU86 - Advantech serial
+// EMU86 - R8810 serial port
 //-------------------------------------------------------------------------------
 
 #include <stdlib.h>
@@ -9,12 +9,11 @@
 #include <string.h>
 #include <unistd.h>
 #include <assert.h>
-//#include <sys/select.h>
 
 #include "emu-serial.h"
 #include "emu-int.h"
 
-#include "int-advtech.h"
+#include "int-r8810.h"
 
 //-------------------------------------------------------------------------------
 
