@@ -25,9 +25,9 @@ HOST=native
 # NOTE: console is forced to SDL for emscripten
 
 #CONSOLE=none
-#CONSOLE=stdio
+CONSOLE=stdio
 #CONSOLE=pty
-CONSOLE=sdl
+#CONSOLE=sdl
 
 # Serial backend
 # none:  no serial backend
