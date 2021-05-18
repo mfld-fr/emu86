@@ -5,7 +5,7 @@
 #include "emu-int.h"
 #include "emu-timer.h"
 
-#include "int-advtech.h"
+#include "int-r8810.h"
 
 //-------------------------------------------------------------------------------
 

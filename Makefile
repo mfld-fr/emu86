@@ -95,26 +95,33 @@ endif
 
 # Target selection
 
+ifeq ($(TARGET), pcxtat)
+	CPU = 808x
+	PLATFORM = 8xxx
+	BOARD = pcxtat
+	EMU86_OBJS += rom-bios.o rom-pcxtat.o
+endif
+
 ifeq ($(TARGET), elks)
-	CFLAGS += -DELKS
+	CPU = 808x
+	PLATFORM = 8xxx
+	BOARD = pcxtat
 	EMU86_OBJS += rom-bios.o rom-elks.o
 endif
 
-ifeq ($(TARGET), pcxtat)
-	EMU86_OBJS += rom-bios.o rom-pcxtat.o
-	TARGET = elks
-endif
-
 ifeq ($(TARGET), advtech)
+	CPU = 8018x
+	PLATFORM = r8810
+	BOARD = advtech
 	EMU86_OBJS += rom-advtech.o
 endif
 
 EMU86_OBJS += \
-	mem-$(TARGET).o \
-	io-$(TARGET).o \
-	int-$(TARGET).o \
-	timer-$(TARGET).o \
-	serial-$(TARGET).o \
+	mem-$(BOARD).o \
+	io-$(BOARD).o \
+	int-$(PLATFORM).o \
+	timer-$(PLATFORM).o \
+	serial-$(PLATFORM).o \
 	# end of list
 
 

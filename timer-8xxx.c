@@ -5,8 +5,8 @@
 #include "emu-int.h"
 #include "emu-timer.h"
 
-#include "int-elks.h"
-#include "mem-io-elks.h"
+#include "int-8xxx.h"
+#include "mem-io-pcxtat.h"
 
 #define TIMER_MAX 3000
 

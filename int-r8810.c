@@ -3,7 +3,9 @@
 //------------------------------------------------------------------------------
 
 #include "emu-int.h"
-#include "int-advtech.h"
+
+#include "int-r8810.h"
+
 
 #define INT_REG_VECT 0
 #define INT_REG_EOI  1
