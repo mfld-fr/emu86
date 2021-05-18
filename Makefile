@@ -45,6 +45,7 @@ EMU86_OBJS = \
 	op-exec.o \
 	emu-int.o \
 	emu-main.o \
+	mapfile.o
 	# end of list
 
 EMU86_OBJS += op-print-$(STYLE).o

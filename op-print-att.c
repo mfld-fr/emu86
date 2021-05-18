@@ -19,6 +19,31 @@ extern word_t op_code_off;
 char op_code_str [3 * OPCODE_MAX + 2];
 byte_t op_code_pos;
 
+struct map { int addr; char *name; };
+extern struct map map[];
+
+// map near text address to symbol
+// TODO: far_text_symbol and data_name
+char *text_symbol(int addr)
+{
+	int i = 1;
+	static char buf[32];
+
+	while (addr >= map[i].addr)
+	{
+		if (map[i].addr == -1)
+		{
+			sprintf(buf, "%.4x", addr);	// fail, display hex address
+			return buf;
+		}
+		i++;
+	}
+	if (addr - map[i-1].addr)
+		sprintf(buf, "%s+%x", map[i-1].name, addr - map[i-1].addr);
+	else sprintf(buf, "%s", map[i-1].name);
+	return buf;
+}
+
 
 // Register class
 
@@ -147,7 +172,7 @@ static void print_var (op_var_t * var)
 
 			// Near address is relative
 
-			printf ("%.4x", (word_t) ((short) op_code_off + var->val.s));
+			printf ("%s", text_symbol((word_t) ((short) op_code_off + var->val.s)));
 			break;
 
 		}
