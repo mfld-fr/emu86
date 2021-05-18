@@ -114,3 +114,66 @@ void mem_io_reset ()
 	}
 
 //-------------------------------------------------------------------------------
+
+int io_read_byte_0 (word_t p, byte_t * b)
+	{
+	int err = 0;
+
+	switch (p)
+		{
+		default:
+			printf ("\nerror: I/O read byte from unmapped %hXh", p);
+			err = -1;
+		}
+
+	return err;
+	}
+
+int io_write_byte_0 (word_t p, byte_t b)
+	{
+	int err = 0;
+
+	switch (p)
+		{
+		default:
+			printf ("\nerror: I/O write byte %hhXh to unmapped %hXh", b, p);
+			err = -1;
+		}
+
+	return err;
+	}
+
+int io_read_word_0 (word_t p, word_t * w)
+	{
+	int err;
+
+	if (p & 0x0001) {
+		printf ("\nerror: I/O read word unaligned %hXh", p);
+		err = -1;
+		}
+	else {
+		printf ("\nerror: I/O read word from unmapped %hXh", p);
+		err = -1;
+		}
+
+	return err;
+	}
+
+int io_write_word_0 (word_t p, word_t w)
+	{
+	int err;
+
+	if (p & 0x0001) {
+		printf ("\nerror: I/O write word %hXh unaligned %hXh", w, p);
+		err = -1;
+		}
+	else {
+		// no port
+		printf ("\nerror: I/O write word %hXh to unmapped %hXh", w, p);
+		err = -1;
+		}
+
+	return err;
+	}
+
+//-------------------------------------------------------------------------------

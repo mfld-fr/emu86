@@ -32,8 +32,14 @@ word_t mem_read_word_0 (addr_t a);
 int mem_write_byte_0 (addr_t a, byte_t b, byte_t init);
 int mem_write_word_0 (addr_t a, word_t w, byte_t init);
 
+int io_read_byte_0 (word_t p, byte_t * b);
+int io_read_word_0 (word_t p, word_t * w);
 
-// Target operations
+int io_write_byte_0 (word_t p, byte_t b);
+int io_write_word_0 (word_t p, word_t w);
+
+
+// Board operations
 
 byte_t mem_read_byte (addr_t a);
 word_t mem_read_word (addr_t a);

@@ -4,10 +4,12 @@
 # pcxtat:  legacy PC/XT/AT
 # elks:    minimal PC to run ELKS
 # advtech: Advantech SNMP-1000 SBC
+# or556:   Orkitt 556
 
 TARGET=pcxtat
 #TARGET=elks
 #TARGET=advtech
+#TARGET=or556
 
 # Host selection
 # native:     run on native host
