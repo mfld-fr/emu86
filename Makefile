@@ -110,6 +110,7 @@ ifeq ($(TARGET), elks)
 endif
 
 ifeq ($(TARGET), advtech)
+	CFLAGS += -DMCU_R8810
 	CPU = 8018x
 	PLATFORM = r8810
 	BOARD = advtech
@@ -117,6 +118,7 @@ ifeq ($(TARGET), advtech)
 endif
 
 ifeq ($(TARGET), or556)
+	CFLAGS += -DMCU_8018X_EB
 	CPU = 8018x
 	PLATFORM = 8018x
 	BOARD = or556

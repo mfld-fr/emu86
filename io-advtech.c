@@ -4,7 +4,7 @@
 
 #include "int-r8810.h"
 #include "serial-r8810.h"
-#include "timer-r8810.h"
+#include "timer-8018x.h"
 
 //-------------------------------------------------------------------------------
 
@@ -43,8 +43,8 @@ int io_read_word (word_t p, word_t * w)
 		*w = 0xFFFF;
 		err = 0;
 		}
-	else if ((0xFF50 <= p) && (p < 0xFF68)) {
-		err = timer_io_read (p - 0xFF50, w);
+	else if ((TIMER_REG_BASE <= p) && (p < TIMER_REG_BASE + TIMER_REG_SIZE)) {
+		err = timer_io_read (p - TIMER_REG_BASE, w);
 		}
 	else if ((0xFF80 <= p) && (p < 0xFF8A)) {
 		err = serial_io_read (p - 0xFF80, w);
