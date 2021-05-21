@@ -19,6 +19,7 @@
 //-------------------------------------------------------------------------------
 
 #define SERIAL_STAT   0  // status register
+#define SERIAL_RDAT   1  // receive data register
 #define SERIAL_TDAT   2  // transmit data register
 
 static word_t serial_regs [SERIAL_REG_COUNT];
@@ -26,7 +27,7 @@ static word_t serial_regs [SERIAL_REG_COUNT];
 //#define SERIAL_CONTROL_TXIE 0x0800
 //#define SERIAL_CONTROL_RXIE 0x0400
 
-//#define SERIAL_STAT_TEMT  0x0040
+#define SERIAL_STATUS_RDR  0x0040
 //#define SERIAL_STAT_THRE  0x0020
 #define SERIAL_STAT_TRDY   0x0008  // transmitter ready
 
@@ -82,8 +83,8 @@ int serial_proc (void)
 
 			// TODO: overflow detection
 
-			//serial_regs [SERIAL_RECV] = (word_t) c;
-			//serial_regs [SERIAL_STAT] |= SERIAL_STATUS_RDR;
+			serial_regs [SERIAL_RDAT] = (word_t) c;
+			serial_regs [SERIAL_STAT] |= SERIAL_STATUS_RDR;
 
 			serial_int ();
 			break;
@@ -117,12 +118,10 @@ int serial_io_read (word_t p, word_t * w)
 	int r = p >> 1;
 	*w = serial_regs [r];
 
-	/*
-	if (r == SERIAL_REG_RDATA) {
+	if (r == SERIAL_RDAT) {
 		serial_regs [SERIAL_STAT] &= ~SERIAL_STATUS_RDR;
 		serial_int ();
 		}
-	 */
 
 	return 0;
 	}
