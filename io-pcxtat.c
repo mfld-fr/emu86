@@ -1,13 +1,16 @@
 //-------------------------------------------------------------------------------
-// EMU86 I/O emulation
-// ELKS target
+// EMU86 - PC/XT/AT board I/O mapping
 //-------------------------------------------------------------------------------
 
-#include <stdio.h>
 #include "emu-mem-io.h"
-#include "mem-io-elks.h"
-#include "int-elks.h"
-#include "timer-elks.h"
+
+#include "int-8xxx.h"
+#include "timer-8xxx.h"
+
+#include "mem-io-pcxtat.h"
+
+#include <stdio.h>
+
 
 extern int info_level;
 
@@ -18,6 +21,11 @@ static byte_t crtc_lastcommand;
 
 int io_read_byte (word_t p, byte_t * b)
 	{
+	/*
+	if ((p >= 0x20 && p <= 0x21) || (p >= 0xA0 && p <= 0xA1))
+		printf("[ INB %3xh AL %02xh]\n", p, *b);
+	*/
+
 	switch (p)
 		{
 		case 0x1F7:		// HD1 status
@@ -28,12 +36,18 @@ int io_read_byte (word_t p, byte_t * b)
 			*b = 0xFF;
 			break;
 		}
+
 	if (info_level & 4) printf("[ INB %3xh AL %02xh]\n", p, *b);
 	return 0;
 	}
 
 int io_write_byte (word_t p, byte_t b)
 	{
+	/*
+	if ((p >= 0x20 && p <= 0x21) || (p >= 0xA0 && p <= 0xA1))
+		printf("[OUTB %3xh AL %0xh]\n", p, b);
+	*/
+
 	switch (p)
 		{
 		case 0x20:  // 8259 PIC
@@ -71,6 +85,11 @@ int io_read_word (word_t p, word_t * w)
 	{
 	int err;
 
+	/*
+	if ((p >= 0x20 && p <= 0x21) || (p >= 0xA0 && p <= 0xA1))
+		printf("[ INW %3xh AX %04xh]\n", p, *w);
+	*/
+
 	if (p & 0x0001) {
 		// bad alignment
 		err = -1;
@@ -88,6 +107,11 @@ int io_read_word (word_t p, word_t * w)
 int io_write_word (word_t p, word_t w)
 	{
 	int err;
+
+	/*
+	if ((p >= 0x20 && p <= 0x21) || (p >= 0xA0 && p <= 0xA1))
+		printf("[OUTW %3xh AX %0xh]\n", p, w);
+	*/
 
 	if (p & 0x0001) {
 		// bad alignment

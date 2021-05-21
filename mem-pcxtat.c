@@ -3,7 +3,8 @@
 //
 
 #include "emu-mem-io.h"
-#include "mem-io-elks.h"
+
+#include "mem-io-pcxtat.h"
 #include "rom-bios.h"
 
 #include <stdio.h>
@@ -41,7 +42,7 @@ byte_t mem_read_byte (addr_t a)
 	byte_t b = mem_read_byte_0 (a);
 
 	/*
-	if ((a >= 0x400 && a < 0x500 && a != 0x471) || a >= 0xF0000)
+	if (a < 0x40)
 		{
 		printf ("\ninfo: reading byte %hhXh from %lXh\n", b, a);
 		}
@@ -56,7 +57,7 @@ word_t mem_read_word (addr_t a)
 	word_t w = mem_read_word_0 (a);
 
 	/*
-	if ((a >= 0x400 && a < 0x4FF && a != 0x46C) || a >= 0xF0000)
+	if (a < 0x40)
 		{
 		printf ("\ninfo: reading word %hXh from %lXh\n", w, a);
 		}
@@ -80,7 +81,7 @@ void mem_write_byte (addr_t a, byte_t b, byte_t init)
 		}
 
 	/*
-	else if (a >= 0x400 && a < 0x500)
+	else if (a < 0x40)
 		{
 		printf ("\ninfo: writing byte %hhXh into %lXh\n", b, a);
 		mem_write_byte_0 (a, b, init);
@@ -109,7 +110,7 @@ void mem_write_word (addr_t a, word_t w, byte_t init)
 		}
 
 	/*
-	else if (a >= 0x400 && a != 0x46C && a < 0x4FF)
+	else if (a < 0x40)
 		{
 		printf ("\ninfo: writing word %hXh into %lXh\n", w, a);
 		mem_write_word_0 (a, w, init);
