@@ -79,9 +79,10 @@ First configure EMU86 by editing `config.mk`:
 
 The default configuration is for a minimal PC / XT / AT.
 
-Two other default configurations are provided for convenience:
+Three other default configurations are provided for convenience:
 * `config-elks.mk`
 * `config-advtech.mk`
+* `config-or556.mk`
 
 Then run `make clean` and `make` as usual.
 
@@ -96,7 +97,7 @@ To build and run browser version (requires ELKS):
 ## TO DO LIST
 
 * Some IA16 instructions are rarely used and so not implemented yet
-* More emulation of the 80188 and R8810 MCUs
+* More emulation of the 8018X and R8810 MCUs
 * Add EEPROM / Flash emulation for complete emulation before burning on real device
 * See also the list of GitHub issues
 
