@@ -9,7 +9,7 @@
 
 #define TIMER2_COUNT   8   // timer 2 count register
 #define TIMER2_MAX     9   // timer 2 max register
-#define TIMER2_MODE    10  // timer 2 mode & control register
+#define TIMER2_MODE    11  // timer 2 mode & control register
 
 static word_t timer_regs [TIMER_REG_COUNT];
 
