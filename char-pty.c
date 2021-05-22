@@ -2,7 +2,8 @@
 // EMU86 - PTY character backend
 //-------------------------------------------------------------------------------
 
-#define _DEFAULT_SOURCE    // for cfmakeraw()
+#define _DEFAULT_SOURCE    // for cfmakeraw() on Linux
+#define _DARWIN_C_SOURCE   // for cfmakeraw() on MacOS
 #define _XOPEN_SOURCE 600  // for posix_openpt() & ptsname()
 
 #include <stdlib.h>
