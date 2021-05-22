@@ -2,21 +2,14 @@
 // EMU86 - 8018X serial port
 //-------------------------------------------------------------------------------
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <fcntl.h>
-#include <termios.h>
-#include <string.h>
-#include <unistd.h>
-#include <assert.h>
-
 #include "emu-serial.h"
 #include "emu-int.h"
 
 #include "int-8018x.h"
 #include "serial-8018x.h"
 
-//-------------------------------------------------------------------------------
+#include <stdio.h>
+
 
 #define SERIAL_STAT   0  // status register
 #define SERIAL_RDAT   1  // receive data register
@@ -27,7 +20,6 @@ static word_t serial_regs [SERIAL_REG_COUNT];
 #define SERIAL_STAT_RINT  0x0040  // receiver interrupt
 #define SERIAL_STAT_TRDY  0x0008  // transmitter ready
 
-//-------------------------------------------------------------------------------
 
 // Set the serial interrupt line
 
@@ -47,6 +39,7 @@ void serial_int (void)
 
 	int_line_set (INT_LINE_SERIAL, stat);
 	}
+
 
 // Serial device procedure
 // Called from main emulator loop
@@ -77,7 +70,7 @@ int serial_proc (void)
 			err = serial_recv (&c);
 			if (err) break;
 
-			// Overflow test
+			// Overflow detection
 
 			if (serial_regs [SERIAL_STAT] & SERIAL_STAT_RINT)
 				{
@@ -113,6 +106,7 @@ int serial_proc (void)
 	return err;
 	}
 
+
 // Serial I/O read
 
 int serial_io_read (word_t p, word_t * w)
@@ -127,6 +121,7 @@ int serial_io_read (word_t p, word_t * w)
 
 	return 0;
 	}
+
 
 // Serial I/O write
 
@@ -143,6 +138,7 @@ int serial_io_write (word_t p, word_t  w)
 	return 0;
 	}
 
+
 // Serial device initialization
 
 void serial_dev_init ()
@@ -153,7 +149,7 @@ void serial_dev_init ()
 	serial_regs [SERIAL_STAT] = SERIAL_STAT_TRDY;
 	}
 
+
 void serial_dev_term ()
 	{
 	}
-
