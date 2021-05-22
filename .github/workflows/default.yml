@@ -38,11 +38,11 @@ jobs:
     - name: make
       run: make
 
-  or556:
+  or566:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
     - name: config
-      run: cp config-or556.mk config.mk
+      run: cp config-or566.mk config.mk
     - name: make
       run: make

@@ -117,12 +117,12 @@ ifeq ($(TARGET), advtech)
 	EMU86_OBJS += rom-advtech.o
 endif
 
-ifeq ($(TARGET), or556)
+ifeq ($(TARGET), or566)
 	CFLAGS += -DMCU_8018X_EB
 	CPU = 8018x
 	PLATFORM = 8018x
-	BOARD = or556
-	EMU86_OBJS += rom-or556.o
+	BOARD = or566
+	EMU86_OBJS += rom-or566.o
 endif
 
 EMU86_OBJS += \
