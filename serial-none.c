@@ -30,3 +30,11 @@ int serial_send (byte_t c)
 	{
 	return 0;
 	}
+
+void serial_normal ()
+	{
+	}
+
+void serial_raw ()
+	{
+	}

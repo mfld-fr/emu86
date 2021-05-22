@@ -4,5 +4,5 @@
 TARGET=or566
 HOST=native
 CONSOLE=none
-SERIAL=pty
+SERIAL=stdio
 STYLE=intel

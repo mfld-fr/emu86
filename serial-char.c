@@ -33,3 +33,13 @@ int serial_send (byte_t c)
 	{
 	return char_send (c);
 	}
+
+void serial_raw ()
+	{
+	char_raw ();
+	}
+
+void serial_normal ()
+	{
+	char_normal ();
+	}
