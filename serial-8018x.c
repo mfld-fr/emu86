@@ -24,12 +24,8 @@
 
 static word_t serial_regs [SERIAL_REG_COUNT];
 
-//#define SERIAL_CONTROL_TXIE 0x0800
-//#define SERIAL_CONTROL_RXIE 0x0400
-
-#define SERIAL_STATUS_RDR  0x0040
-//#define SERIAL_STAT_THRE  0x0020
-#define SERIAL_STAT_TRDY   0x0008  // transmitter ready
+#define SERIAL_STAT_RINT  0x0040  // receiver interrupt
+#define SERIAL_STAT_TRDY  0x0008  // transmitter ready
 
 //-------------------------------------------------------------------------------
 
@@ -40,7 +36,7 @@ void serial_int (void)
 	int stat = 0;
 
 	/*
-	if ((serial_regs [SERIAL_STAT] & SERIAL_STATUS_RDR)
+	if ((serial_regs [SERIAL_STAT] & SERIAL_STAT_RINT)
 		&&  (serial_regs [SERIAL_MODE] & SERIAL_CONTROL_RXIE))
 		stat = 1;
 
@@ -81,10 +77,16 @@ int serial_proc (void)
 			err = serial_recv (&c);
 			if (err) break;
 
-			// TODO: overflow detection
+			// Overflow test
+
+			if (serial_regs [SERIAL_STAT] & SERIAL_STAT_RINT)
+				{
+				puts ("\nwarning: serial port input overflow");
+				// TODO: set overflow flag in status register
+				}
 
 			serial_regs [SERIAL_RDAT] = (word_t) c;
-			serial_regs [SERIAL_STAT] |= SERIAL_STATUS_RDR;
+			serial_regs [SERIAL_STAT] |= SERIAL_STAT_RINT;
 
 			serial_int ();
 			break;
@@ -119,7 +121,7 @@ int serial_io_read (word_t p, word_t * w)
 	*w = serial_regs [r];
 
 	if (r == SERIAL_RDAT) {
-		serial_regs [SERIAL_STAT] &= ~SERIAL_STATUS_RDR;
+		serial_regs [SERIAL_STAT] &= ~SERIAL_STAT_RINT;
 		serial_int ();
 		}
 
