@@ -141,7 +141,7 @@ static void print_var (op_var_t * var)
 
 			// Near address is relative
 
-			printf ("%.4Xh", (word_t) ((short) op_code_off + var->val.s));
+			printf ("%s", text_symbol((word_t) ((short) op_code_off + var->val.s)));
 			break;
 
 		}
