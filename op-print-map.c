@@ -1,12 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-//#include <assert.h>
 
-//#include "op-id.h"
-//#include "op-id-name.h"
 #include "op-common.h"
-//#include "op-class.h"
 
 
 #define MAXSYMBOLS	1000
