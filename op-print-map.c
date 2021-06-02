@@ -69,14 +69,17 @@ char *text_symbol (int addr)
 	int i = 1;
 	static char buf[32];
 
+	if (numsymbols == 0)
+		{
+	displayhex:
+		sprintf(buf, "%.4x", addr);
+		return buf;
+		}
+
 	addr += 0x10000;	// adjust to mapfile text symbol
 	while (addr >= map[i].addr)
 		{
-		if (i >= MAXSYMBOLS)
-			{
-			sprintf(buf, "%.4x", addr);	// fail, display hex address
-			return buf;
-			}
+		if (i > numsymbols) goto displayhex;
 		i++;
 		}
 	if (addr - map[i-1].addr)
