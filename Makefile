@@ -38,6 +38,7 @@ EMU86_HDRS = \
 EMU86_OBJS = \
 	list.o \
 	op-common.o \
+	op-print-map.o \
 	op-id-name.o \
 	op-class.o \
 	emu-mem-io.o \
@@ -45,7 +46,6 @@ EMU86_OBJS = \
 	op-exec.o \
 	emu-int.o \
 	emu-main.o \
-	mapfile.o
 	# end of list
 
 EMU86_OBJS += op-print-$(STYLE).o
