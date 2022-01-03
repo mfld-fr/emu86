@@ -563,6 +563,16 @@ static word_t alu_calc_2 (word_t op, byte_t w, word_t a, word_t b)
 			r = a ^ b;
 			break;
 
+		case OP_IIMUL:
+			r = a * b;
+
+			co = (~a & b) | (~(a ^ b) & r);
+			ci = a ^ b ^ r;
+
+			cf = co & m;
+			of = ci & m;
+			break;
+
 		default:
 			assert (0);
 
@@ -1702,6 +1712,8 @@ static op_id_hand_t _id_hand_tab [] = {
 
 	{ OP_ENTER,    op_enter     },
 	{ OP_LEAVE,    op_leave     },
+
+	{OP_IIMUL,     op_calc_2	},
 
 	{ OP_NULL,     NULL         }  // end of table
 	};

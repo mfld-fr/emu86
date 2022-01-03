@@ -716,10 +716,16 @@ static int class_1_40h (byte_t code, op_desc_t * op_desc)
 				break;
 				}
 
+			// 0x69 E 0x6B
+			if ((code&0xd) == 0x9) {
+				OP_ID = OP_IIMUL;
+				fetch_code_2 (op_desc);
+				err = class_w_mod_rm_imm( (code & 0x2)? CF_S:0, op_desc);
+				break;
+				}
+
 			// TODO: complete with 80186 opcodes
 			// 0x62: BOUND
-			// 0x69: IMUL imm16
-			// 0x6B: IMUL imm8
 			// 0x6C: INS p8
 			// 0x6D: INS p16
 			// 0x6E: OUTS p8

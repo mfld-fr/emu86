@@ -170,4 +170,8 @@
 #define OP_ENTER    0x006D
 #define OP_LEAVE    0x006E
 
+// todo: Put somewhere more adequate
+// Integer Imediate multiply
+#define OP_IIMUL	0x006F
+
 // LUT END
