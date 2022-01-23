@@ -563,7 +563,8 @@ static word_t alu_calc_2 (word_t op, byte_t w, word_t a, word_t b)
 			r = a ^ b;
 			break;
 
-		case OP_IIMUL:
+		/*
+		case OP_IMUL3:
 			r = a * b;
 
 			co = (~a & b) | (~(a ^ b) & r);
@@ -572,6 +573,7 @@ static word_t alu_calc_2 (word_t op, byte_t w, word_t a, word_t b)
 			cf = co & m;
 			of = ci & m;
 			break;
+		*/
 
 		default:
 			assert (0);
@@ -1447,6 +1449,7 @@ static int op_loop (op_desc_t * op_desc)
 	return 0;
 	}
 
+
 // XLAT
 
 static int op_xlat (op_desc_t * op_desc)
@@ -1464,7 +1467,7 @@ static int op_xlat (op_desc_t * op_desc)
 	}
 
 
-// Enter/Leave
+// Enter & Leave
 
 static int op_enter (op_desc_t * op_desc)
 	{
@@ -1530,7 +1533,7 @@ static int op_adjust2 (op_desc_t * op_desc)
 
 	op_var_t * var = &op_desc->var_to;
 	assert (var->type == VT_IMM);
-	
+
 	byte_t tempAL = reg8_get(REG_AL);
 	byte_t tempAH = reg8_get(REG_AH);
 
@@ -1555,6 +1558,15 @@ static int op_adjust2 (op_desc_t * op_desc)
 
 	return 0;
 	}
+
+
+// Special IMUL with 3 operands
+
+static int op_calc_3 (op_desc_t * op_desc)
+	{
+	return -1;
+	}
+
 
 // Table of operation handlers
 
@@ -1713,7 +1725,7 @@ static op_id_hand_t _id_hand_tab [] = {
 	{ OP_ENTER,    op_enter     },
 	{ OP_LEAVE,    op_leave     },
 
-	{OP_IIMUL,     op_calc_2	},
+	{OP_IMUL3,     op_calc_3    },
 
 	{ OP_NULL,     NULL         }  // end of table
 	};

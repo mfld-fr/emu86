@@ -82,6 +82,7 @@ struct op_desc_s
 	byte_t   var_wb;    // operand is =1 byte, =2 word (for printing)
 	op_var_t var_to;    // optional single or 'to' operand
 	op_var_t var_from;  // optional 'from' operand
+	op_var_t var_from2; // optional 'from2' operand
 
 	// opcode 1 byte fields
 

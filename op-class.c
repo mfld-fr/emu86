@@ -546,6 +546,41 @@ static int class_mod_reg_rm (byte_t flags, op_desc_t * op)
 	}
 
 
+// Special class for 80186 IMUL with 3 operands
+
+static int class_mod_reg_rm_imm (byte_t __attribute__((unused)) flags, op_desc_t * op)
+	{
+	op->var_count = 3;
+
+	op_var_t * var_reg = &(op->var_to);
+	op_var_t * var_rm  = &(op->var_from);
+	op_var_t * var_imm = &(op->var_from2);
+
+	var_reg->type = VT_REG;
+	var_reg->w = 1;
+	var_reg->val.r = op->reg2;
+
+	scan_mod_rm (1, op->mod, op->rm, var_rm);
+
+	// Immediate value follows the MOD-RM displacement
+
+	var_imm->type  = VT_IMM;
+	var_imm->w = 1;
+	var_imm->s = 1;
+
+	if (op->s)
+		{
+		var_imm->val.s = (short) (char) fetch_byte ();
+		}
+	else
+		{
+		var_imm->val.w = fetch_word ();
+		}
+
+	return 0;
+	}
+
+
 static int class_mod_seg_rm (byte_t flags, op_desc_t * op)
 	{
 	op->var_count = 2;
@@ -694,42 +729,47 @@ static int class_1_40h (byte_t code, op_desc_t * op_desc)
 		// Only for 80186 (6xh)
 
 		case 0x20:
-			if (!(code & 0x0E))
+			if (!(code & 0x08))
 				{
-				// PUSHA / POPA
-				// 0x60h / 0x61h
+				if ((code & 0x06) == 0x00)
+					{
+					// PUSHA (60h) / POPA (61h)
 
-				OP_ID = OP_STACK2 + op_desc->w2;
-				err = 0;
+					OP_ID = OP_STACK2 + op_desc->w2;
+					err = 0;
+					break;
+					}
+
+				// TODO: complete with 80186 opcodes
+				// 62h: BOUND
+
+				// 63h to 67h are forbidden for 8086 / 80186
+
 				break;
 				}
 
-			if (code == 0x68) {
+			// PUSH imm16 (68h) / imm8 (6Ah)
+
+			if ((code & 0x05) == 0x00) {
 				OP_ID = OP_PUSH;
-				err = class_imm (CF_2, op_desc);
+				err = class_imm (op_desc->s ? CF_1 : CF_2 , op_desc);
 				break;
 				}
 
-			if (code == 0x6A) {
-				OP_ID = OP_PUSH;
-				err = class_imm (CF_1, op_desc);
-				break;
-				}
+			// IMUL imm16 (69h) / imm8 (6Bh)
 
-			// 0x69 E 0x6B
-			if ((code&0xd) == 0x9) {
-				OP_ID = OP_IIMUL;
+			if ((code & 0x05) == 0x01) {
+				OP_ID = OP_IMUL3;
 				fetch_code_2 (op_desc);
-				err = class_w_mod_rm_imm( (code & 0x2)? CF_S:0, op_desc);
+				err = class_mod_reg_rm_imm (0, op_desc);
 				break;
 				}
 
 			// TODO: complete with 80186 opcodes
-			// 0x62: BOUND
-			// 0x6C: INS p8
-			// 0x6D: INS p16
-			// 0x6E: OUTS p8
-			// 0x6F: OUTS p16
+			// 6Ch: INS p8
+			// 6Dh: INS p16
+			// 6Eh: OUTS p8
+			// 6Fh: OUTS p16
 
 			break;
 
