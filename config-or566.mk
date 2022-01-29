@@ -1,8 +1,8 @@
 # EMU86 configuration
-# Defaults for Orkitt 556 target
+# Defaults for Orkit 566 target
 
-TARGET=or556
+TARGET=or566
 HOST=native
 CONSOLE=none
-SERIAL=pty
+SERIAL=stdio
 STYLE=intel

@@ -7,14 +7,14 @@
 #include "list.h"
 #include "emu-types.h"
 
-// Screen emulation
+// Display emulation
 
 int con_put_char (byte_t c, byte_t a);
 int con_pos_set (byte_t row, byte_t col);
 int con_pos_get (byte_t *row, byte_t *col);
 int con_scroll (int dn, byte_t n, byte_t at, byte_t r, byte_t c, byte_t r2, byte_t c2);
 
-// Keyboard queue
+// Keyboard emulation
 
 void con_init_key ();
 void con_put_key (word_t k);

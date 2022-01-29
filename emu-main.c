@@ -118,6 +118,8 @@ static int debug_proc ()
 			// FIXME: use safer input function
 
 			con_normal();
+			serial_normal ();
+
 			char command [8];
 			if (!_flag_trace) putchar ('\n');
 			putchar ('>');
@@ -129,6 +131,7 @@ static int debug_proc ()
 				}
 
 			con_raw();
+			serial_raw ();
 
 			switch (command [0])
 				{

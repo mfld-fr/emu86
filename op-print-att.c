@@ -234,6 +234,12 @@ void print_op (op_desc_t * op_desc)
 
 	byte_t count = op_desc->var_count;
 
+	if (count >= 3)
+		{
+		print_var (&(op_desc->var_from2));
+		putchar (',');
+		}
+
 	if (count >= 2)
 		{
 		print_var (&(op_desc->var_from));

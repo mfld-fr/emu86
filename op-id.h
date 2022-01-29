@@ -170,4 +170,10 @@
 #define OP_ENTER    0x006D
 #define OP_LEAVE    0x006E
 
+// 8086 IMUL has implicit accumulator operand and is mapped to CALC1
+// while 80186 has special IMUL with 3 explicit operands mapped to CALC3
+// so use another operation ID for that special IMUL
+
+#define OP_IMUL3    0x006F
+
 // LUT END

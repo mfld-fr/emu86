@@ -82,7 +82,7 @@ The default configuration is for a minimal PC / XT / AT.
 Three other default configurations are provided for convenience:
 * `config-elks.mk`
 * `config-advtech.mk`
-* `config-or556.mk`
+* `config-or566.mk`
 
 Then run `make clean` and `make` as usual.
 

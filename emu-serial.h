@@ -20,6 +20,11 @@ int serial_recv (byte_t * c);
 
 int serial_poll ();
 
+// Serial modes
+
+void serial_normal ();
+void serial_raw ();
+
 // Subsystem
 
 int serial_init ();
