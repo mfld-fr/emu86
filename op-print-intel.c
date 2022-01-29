@@ -194,4 +194,13 @@ void print_op (op_desc_t * op_desc)
 		if (op_desc->var_wb) printf ((op_desc->var_wb == VP_WORD) ? "WORD ": "BYTE ");
 		print_var (&(op_desc->var_from));
 		}
+
+	if (count == 3)
+		{
+		print_var (&(op_desc->var_to));
+		putchar (',');
+		print_var (&(op_desc->var_from));
+		putchar (',');
+		print_var (&(op_desc->var_from2));
+		}
 	}

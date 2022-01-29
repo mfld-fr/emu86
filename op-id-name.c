@@ -108,6 +108,7 @@ static op_id_name_t id_name_tab [] = {
 	{ OP_XCHG,   "XCHG"   },
 	{ OP_XLAT,   "XLAT"   },
 	{ OP_XOR,    "XOR"    },
+	{ OP_IMUL3,  "IMUL"   },
 	{ OP_NULL,   NULL     }
 	};
 
