@@ -397,6 +397,7 @@ static void usage (char * argv0)
 	puts ("  -w <address>         load address");
 	puts ("  -f <path>            file path");
 	puts ("  -I <path>            disk image path");
+	puts ("  -M <path>            map file path");
 	puts ("  -x <segment:offset>  execute address");
 	puts ("  -c <address>         code breakpoint address");
 	puts ("  -d <address>         data breakpoint address");
@@ -418,12 +419,13 @@ int command_line (int argc, char * argv [])
 	addr_t file_address = -1;
 	char * file_path = NULL;
 	char * disk_image_path = NULL;
+	char * map_file_path = NULL;
 	addr_t new_bp = -1;
 	addr_t * new_array = NULL;
 
 	while (1)
 		{
-		opt = getopt (argc, argv, "w:f:I:x:c:d:v:tTmip");
+		opt = getopt (argc, argv, "w:f:I:M:x:c:d:v:tTmip");
 		if (opt < 0 || opt == '?') break;
 
 		switch (opt)
@@ -447,6 +449,10 @@ int command_line (int argc, char * argv [])
 
 			case 'I':  // disk image file path
 				disk_image_path = optarg;
+				break;
+
+			case 'M':  // map file path
+				map_file_path = optarg;
 				break;
 
 			// Execution address:
@@ -554,6 +560,12 @@ int command_line (int argc, char * argv [])
 				}
 
 			disk_image_path = NULL;
+			}
+
+		if (map_file_path)
+			{
+			map_file_load (map_file_path);
+			map_file_path = NULL;
 			}
 
 		}  // option loop
