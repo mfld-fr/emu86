@@ -320,14 +320,12 @@ static int readwrite_sector (byte_t drive, int wflag, unsigned long lba,
 	while (1)
 		{
 		ssize_t l;
-		ssize_t (*op)();
 
 		off_t o = lseek (dp->fd, lba * SECTOR_SIZE, SEEK_SET);
 		if (o == -1) break;
 
-		op = read;
-		if (wflag) op = write;
-		l = (*op) (dp->fd, mem_get_addr (addr_seg_off (seg, off)), SECTOR_SIZE);
+		if (wflag) l = write(dp->fd, mem_get_addr (addr_seg_off (seg, off)), SECTOR_SIZE);
+		else l = read(dp->fd, mem_get_addr (addr_seg_off (seg, off)), SECTOR_SIZE);
 		if (l != SECTOR_SIZE) break;
 
 		// success
