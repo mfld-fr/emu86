@@ -18,7 +18,11 @@
 #define INT_LINE_INT2   6
 #define INT_LINE_INT3   7
 
-#define INT_LINE_MAX    8
+#define INT_LINE_TIMER1   8
+#define INT_LINE_TIMER2   9
+#define INT_LINE_SERIALTX 10
+
+#define INT_LINE_MAX    (8+3)
 
 // Interrupt controller
 
@@ -28,4 +32,5 @@
 #define INT_REG_COUNT 15
 #define INT_REG_SIZE (INT_REG_COUNT * 2)
 
+int int_io_read (word_t p, word_t * w);
 int int_io_write (word_t p, word_t w);
