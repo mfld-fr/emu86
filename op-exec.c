@@ -1552,7 +1552,26 @@ static int op_adjust2 (op_desc_t * op_desc)
 
 static int op_calc_3 (op_desc_t * op_desc)
 	{
-	return -1;
+	assert (op_desc->var_count == 3);
+	op_var_t * to   = &op_desc->var_to;
+	op_var_t * from = &op_desc->var_from;
+	op_var_t * from2 = &op_desc->var_from2;
+	assert (from->type == VT_REG);
+	assert (from2->type == VT_IMM);
+	assert (to->type == VT_REG);
+
+	op_var_t temp1;
+	op_var_t temp2;
+	memset (&temp1, 0, sizeof (op_var_t));
+	memset (&temp2, 0, sizeof (op_var_t));
+
+	val_get (from, &temp1);
+	val_get (from2, &temp2);
+
+	word_t w = (temp1.val.w * temp2.val.w) & 0xffff;
+
+	reg16_set (to->val.r, w);
+	return 0;
 	}
 
 

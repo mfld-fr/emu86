@@ -120,13 +120,15 @@ static int debug_proc ()
 			con_normal();
 			serial_normal ();
 
-			char command [8];
+			char command [100];
 			if (!_flag_trace) putchar ('\n');
 			putchar ('>');
 			fflush (stdout);
-			char * res = fgets (command, 8, stdin);
+			char * res = fgets (command, sizeof(command), stdin);
 			if (!res) {
 				err = -1;
+					_flag_exec = 0;
+					_flag_exit = 1;
 				break;
 				}
 
@@ -199,6 +201,25 @@ static int debug_proc ()
 					err = exec_int (0x08);  // timer 0 interrupt
 					if (err) puts ("error: timer interrupt");
 					break;
+
+				// read memory address
+
+				case 'R':
+					{
+					word_t seg,off;
+					if (sscanf (&command[1], "%hx:%hx", &seg, &off) != 2)
+						{
+						puts ("error: bad read address");
+						}
+					else
+						{
+							addr_t a = addr_seg_off(seg, off);
+							byte_t b = mem_stat [a];
+							printf ("info: Address %02x:%02x %5lx = %02x\n",seg,off, a, b);
+						}
+					}
+					break;
+
 
 				}  // command switch
 			}  // _flag_prompt
