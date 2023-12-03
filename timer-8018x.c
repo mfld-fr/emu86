@@ -5,7 +5,6 @@
 #include "emu-int.h"
 #include "emu-timer.h"
 
-#include "emu-int.h"
 #include "int-8018x.h"
 #include "timer-8018x.h"
 

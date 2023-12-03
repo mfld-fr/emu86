@@ -25,32 +25,31 @@
 int _int_line_max = INT_LINE_MAX;
 int _int_prio_max = INT_PRIO_MAX;
 
-// Timer & serial are edge triggered
-
 int _pri_mask = 7;
 
+// Timers & serial are edge triggered
 int _int_mode [INT_LINE_MAX] =
-	{ 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1};
+	{ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1};
 
+// Default priority for timers is 0
+// Default priority for serial is 1
 int _int_prio [INT_LINE_MAX] =
-	{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1};
 
 int _int_vect [INT_LINE_MAX] =
-	{ 8, 0, 20, 17, 12, 13, 14, 15, 21, 18, 19 };
+	{ 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21};
 
 int _int_mask [INT_LINE_MAX] =
-	{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+	{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
 
-int _int_req [INT_LINE_MAX] =
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-
-int _int_serv [INT_LINE_MAX] =
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+// Initialized to zero by CRT
+int _int_req [INT_LINE_MAX];
+int _int_serv [INT_LINE_MAX];
 
 word_t imask;
 
+// PIC I/O read
 
-// PIC I/O write
 int int_io_read (word_t p, word_t * w)
 {
 	int err = 0;
@@ -62,11 +61,11 @@ int int_io_read (word_t p, word_t * w)
 			word_t out = 0;
 			for (size_t i = 0; i < 8; i++) {
 				if (i == 0) {
-					if (_int_req[i] || _int_req[INT_LINE_TIMER1] || _int_req[INT_LINE_TIMER2]) {
+					if (_int_req[INT_LINE_TIMER0] || _int_req[INT_LINE_TIMER1] || _int_req[INT_LINE_TIMER2]) {
 						out |= 1 << i;
 					}
 				} else if (i == 2) {
-					if (_int_req[i] || _int_req[INT_LINE_SERIALTX]) {
+					if (_int_req[INT_LINE_SERIAL_RX] || _int_req[INT_LINE_SERIAL_TX]) {
 						out |= 1 << i;
 					}
 				} else if (_int_req[i]) {
@@ -79,7 +78,15 @@ int int_io_read (word_t p, word_t * w)
 		{
 			word_t out = 0;
 			for (size_t i = 0; i < 8; i++) {
-				if (_int_mask[i]) {
+				if (i == 0) {
+					if (_int_mask[INT_LINE_TIMER0]) {
+						out |= 1 << i;
+					}
+				} else if (i == 2) {
+					if (_int_mask[INT_LINE_SERIAL_RX]) {
+						out |= 1 << i;
+					}
+				} else if (_int_mask[i]) {
 					out |= 1 << i;
 				}
 			}
@@ -94,6 +101,8 @@ int int_io_read (word_t p, word_t * w)
 
 	return err;
 }
+
+// PIC I/O write
 
 int int_io_write (word_t p, word_t w)
 	{
@@ -133,8 +142,8 @@ int int_io_write (word_t p, word_t w)
 					int_end_line (INT_LINE_INT4);
 					break;
 				case 20:
-					int_end_line (INT_LINE_SERIAL);
-					int_end_line (INT_LINE_SERIALTX);
+					int_end_line (INT_LINE_SERIAL_RX);
+					int_end_line (INT_LINE_SERIAL_TX);
 					break;
 				default:
 					printf("nemam %d\n", w & 0x1f);
@@ -143,18 +152,22 @@ int int_io_write (word_t p, word_t w)
 		}
 	else if (r == INT_REG_MASK)
 		{
-			for (int i = 8-1; i >= 0; i--) {
-				int mask = (w & 0x80) ? 1 : 0;
-				_int_mask[i] = mask;
+			for (int i = 0; i < 8; i++) {
+				int mask = (w & 0x01) ? 1 : 0;
 
-				if (i == INT_LINE_SERIAL) {
-					_int_mask[INT_LINE_SERIALTX] = mask;
-				}
-				if (i == INT_LINE_TIMER0) {
+				if (i == 0) {
+					_int_mask[INT_LINE_TIMER0] = mask;
 					_int_mask[INT_LINE_TIMER1] = mask;
 					_int_mask[INT_LINE_TIMER2] = mask;
 				}
-				w <<= 1;
+				else if (i == 2) {
+					_int_mask[INT_LINE_SERIAL_RX] = mask;
+					_int_mask[INT_LINE_SERIAL_TX] = mask;
+				}
+				else {
+					_int_mask[i] = mask;
+				}
+				w >>= 1;
 			}
 		}
 	else if (r == INT_REG_PRIMSK)
@@ -176,10 +189,10 @@ int int_io_write (word_t p, word_t w)
 	else if (r == INT_REG_SCUCON)
 	{
 		// TODO: level ?
-		_int_mask[INT_LINE_SERIAL] = (p >> 3) & 1;
-		_int_mask[INT_LINE_SERIALTX] = (p >> 3) & 1;
-		_int_prio[INT_LINE_SERIAL] = p & 7;
-		_int_prio[INT_LINE_SERIALTX] = p & 7;
+		_int_mask[INT_LINE_SERIAL_RX] = (p >> 3) & 1;
+		_int_mask[INT_LINE_SERIAL_TX] = (p >> 3) & 1;
+		_int_prio[INT_LINE_SERIAL_RX] = p & 7;
+		_int_prio[INT_LINE_SERIAL_TX] = p & 7;
 //		printf("int scu pri %d mask %d\n", p & 7, (p >> 3) & 1);
 	}
 	else if (r == INT_REG_I4CON)
