@@ -22,6 +22,18 @@
 #define INT_REG_I2CON 13
 #define INT_REG_I3CON 14
 
+// REQST and MASK register bits
+#define BIT_TMR  0
+// Bit 1 is reserved on all models
+// Bits 2 & 3 are for DMA in XL variant
+// Bits 2 & 3 are for serial and INT4 for EB variant
+#define BIT_SER  2
+#define BIT_INT4 3
+#define BIT_INT0 4
+#define BIT_INT1 5
+#define BIT_INT2 6
+#define BIT_INT3 7
+
 int _int_line_max = INT_LINE_MAX;
 int _int_prio_max = INT_PRIO_MAX;
 
@@ -60,11 +72,11 @@ int int_io_read (word_t p, word_t * w)
 		{
 			word_t out = 0;
 			for (size_t i = 0; i < 8; i++) {
-				if (i == 0) {
+				if (i == BIT_TMR) {
 					if (_int_req[INT_LINE_TIMER0] || _int_req[INT_LINE_TIMER1] || _int_req[INT_LINE_TIMER2]) {
 						out |= 1 << i;
 					}
-				} else if (i == 2) {
+				} else if (i == BIT_SER) {
 					if (_int_req[INT_LINE_SERIAL_RX] || _int_req[INT_LINE_SERIAL_TX]) {
 						out |= 1 << i;
 					}
@@ -78,11 +90,11 @@ int int_io_read (word_t p, word_t * w)
 		{
 			word_t out = 0;
 			for (size_t i = 0; i < 8; i++) {
-				if (i == 0) {
+				if (i == BIT_TMR) {
 					if (_int_mask[INT_LINE_TIMER0]) {
 						out |= 1 << i;
 					}
-				} else if (i == 2) {
+				} else if (i == BIT_SER) {
 					if (_int_mask[INT_LINE_SERIAL_RX]) {
 						out |= 1 << i;
 					}
@@ -155,12 +167,12 @@ int int_io_write (word_t p, word_t w)
 			for (int i = 0; i < 8; i++) {
 				int mask = (w & 0x01) ? 1 : 0;
 
-				if (i == 0) {
+				if (i == BIT_TMR) {
 					_int_mask[INT_LINE_TIMER0] = mask;
 					_int_mask[INT_LINE_TIMER1] = mask;
 					_int_mask[INT_LINE_TIMER2] = mask;
 				}
-				else if (i == 2) {
+				else if (i == BIT_SER) {
 					_int_mask[INT_LINE_SERIAL_RX] = mask;
 					_int_mask[INT_LINE_SERIAL_TX] = mask;
 				}
