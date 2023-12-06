@@ -7,22 +7,23 @@
 #include "emu-types.h"
 
 // Interrupt lines
-// 8018X EB variant
+// Merge 8018X XL/EA/EB/EC variants
 
-#define INT_LINE_TIMER0 0
-#define INT_LINE_CASC   1  // reserved
-#define INT_LINE_SERIAL 2
-#define INT_LINE_INT4   3
-#define INT_LINE_INT0   4
-#define INT_LINE_INT1   5
-#define INT_LINE_INT2   6
-#define INT_LINE_INT3   7
+#define INT_LINE_TIMER0     0
+#define INT_LINE_CASC       1
+#define INT_LINE_DMA0       2
+#define INT_LINE_DMA1       3
+#define INT_LINE_INT0       4
+#define INT_LINE_INT1       5
+#define INT_LINE_INT2       6
+#define INT_LINE_INT3       7
+#define INT_LINE_INT4       9
+#define INT_LINE_TIMER1    10
+#define INT_LINE_TIMER2    11
+#define INT_LINE_SERIAL_RX 12
+#define INT_LINE_SERIAL_TX 13
 
-#define INT_LINE_TIMER1   8
-#define INT_LINE_TIMER2   9
-#define INT_LINE_SERIALTX 10
-
-#define INT_LINE_MAX    (8+3)
+#define INT_LINE_MAX       14
 
 // Interrupt controller
 

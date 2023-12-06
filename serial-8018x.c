@@ -37,7 +37,7 @@ void serial_int (void)
 		stat = 1;
 	*/
 
-	int_line_set (INT_LINE_SERIAL, stat);
+	int_line_set (INT_LINE_SERIAL_RX, stat);
 	}
 
 
