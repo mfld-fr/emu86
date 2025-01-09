@@ -12,13 +12,13 @@
 
 #define REG_T0CNT     0   // timer 0 count register
 #define REG_T0CMPA    1   // timer 0 max A register
-#define REG_T0CMPB    2   // 
-#define REG_T0CON     3   // 
+#define REG_T0CMPB    2   // timer 0 max B register
+#define REG_T0CON     3   // timer 0 mode & control register
 
-#define REG_T1CNT     4   // timer 0 count register
-#define REG_T1CMPA    5   // timer 0 max A register
-#define REG_T1CMPB    6   // 
-#define REG_T1CON     7   // 
+#define REG_T1CNT     4   // timer 1 count register
+#define REG_T1CMPA    5   // timer 1 max A register
+#define REG_T1CMPB    6   // timer 1 max B register
+#define REG_T1CON     7   // timer 1 mode & control register
 
 #define REG_T2CNT     8   // timer 2 count register
 #define REG_T2CMPA    9   // timer 2 max register
@@ -38,8 +38,8 @@ static word_t timer_regs [TIMER_REG_COUNT];
 #define TIMER_CON_EXT  0x0004  // not implemented
 #define TIMER_CON_P    0x0008
 #define TIMER_CON_RTG  0x0010  // not implemented
-#define TIMER_CON_MC   0x0020 
-#define TIMER_CON_RIU  0x1000 
+#define TIMER_CON_MC   0x0020
+#define TIMER_CON_RIU  0x1000
 #define TIMER_CON_INT  0x2000
 #define TIMER_CON_INH  0x4000
 #define TIMER_CON_EN   0x8000  // timer enabled

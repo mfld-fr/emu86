@@ -24,9 +24,9 @@
 
 // REQST and MASK register bits
 #define BIT_TMR  0
-// Bit 1 is reserved on all models
+// Bit 1 is reserved in all variants
 // Bits 2 & 3 are for DMA in XL variant
-// Bits 2 & 3 are for serial and INT4 for EB variant
+// Bits 2 & 3 are for serial and INT4 in EB variant
 #define BIT_SER  2
 #define BIT_INT4 3
 #define BIT_INT0 4
@@ -55,7 +55,7 @@ int _int_mask [INT_LINE_MAX] =
 	{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
 
 // Initialized to zero by CRT
-int _int_req [INT_LINE_MAX];
+int _int_req  [INT_LINE_MAX];
 int _int_serv [INT_LINE_MAX];
 
 word_t imask;
