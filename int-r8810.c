@@ -27,12 +27,9 @@ int _int_vect [INT_LINE_MAX] =
 int _int_mask [INT_LINE_MAX] =
 	{ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0};  // FIXME: unmask timer & serial by program
 
-int _int_req [INT_LINE_MAX] =
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-
-int _int_serv [INT_LINE_MAX] =
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-
+// Initialized to zero by CRT
+int _int_req  [INT_LINE_MAX];
+int _int_serv [INT_LINE_MAX];
 
 // PIC I/O write
 
